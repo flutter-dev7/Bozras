@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { cn } from '@/lib/utils'
 
-import { ProductionTab } from './production-tab'
+import { ProductionTab } from '../reports/production-tab'
 import { SalesTab } from '../reports/sales-tab'
 
 type Tab = 'production' | 'sales'

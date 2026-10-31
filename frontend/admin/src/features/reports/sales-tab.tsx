@@ -1,14 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import {
-  Banknote,
-  CalendarDays,
-  Loader2,
-  Package,
-  ShoppingBasket,
-  Wallet,
-  type LucideIcon,
-} from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { Banknote, CalendarDays, Loader2, Package, ShoppingBasket, Wallet } from 'lucide-react'
+import { useState } from 'react'
 import {
   Area,
   AreaChart,
@@ -21,6 +13,7 @@ import {
   YAxis,
 } from 'recharts'
 
+import { StatCard } from '@/components/stat-card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { dushanbeDate, formatDate, money } from '@/lib/format'
@@ -79,62 +72,6 @@ function fillDays(from: string, to: string, byDay: SalesDay[]): DayPoint[] {
   return result
 }
 
-function SparkCard({
-  id,
-  icon: Icon,
-  label,
-  value,
-  tone,
-  color,
-  data,
-  footer,
-}: {
-  id: string
-  icon: LucideIcon
-  label: string
-  value: string
-  tone: string
-  color: string
-  data?: { v: number }[]
-  footer?: ReactNode
-}) {
-  return (
-    <div className="rounded-2xl border bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-3">
-        <div className={cn('flex size-10 items-center justify-center rounded-xl', tone)}>
-          <Icon className="size-5" />
-        </div>
-        <p className="text-sm font-semibold text-stone-500">{label}</p>
-      </div>
-      <p className="mt-4 text-3xl font-extrabold text-stone-900">{value}</p>
-      <div className="mt-2 h-12">
-        {data && data.length > 1 ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Area
-                type="monotone"
-                dataKey="v"
-                stroke={color}
-                strokeWidth={2.5}
-                fill={`url(#${id})`}
-                dot={false}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        ) : (
-          footer
-        )}
-      </div>
-    </div>
-  )
-}
-
 function ChartTooltip({
   active,
   payload,
@@ -183,8 +120,6 @@ export function SalesTab() {
     fill: PALETTE[i % PALETTE.length],
   }))
   const productsTotal = products.reduce((sum, p) => sum + p.amount, 0)
-  const receivedShare =
-    data && data.totalAmount > 0 ? Math.min(100, (data.receivedPayments / data.totalAmount) * 100) : 0
 
   return (
     <div className="space-y-6">
@@ -252,59 +187,41 @@ export function SalesTab() {
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <SparkCard
-              id="spark-orders"
+            <StatCard
+              index={0}
               icon={ShoppingBasket}
               label="Заказов"
-              value={String(data.ordersCount)}
-              tone="bg-sky-100 text-sky-700"
-              color="#0284c7"
-              data={days.map((d) => ({ v: d.orders }))}
+              value={data.ordersCount}
+              tone="sky"
             />
-            <SparkCard
-              id="spark-amount"
+            <StatCard
+              index={1}
               icon={Banknote}
               label="Сумма заказов"
-              value={money(data.totalAmount)}
-              tone="bg-emerald-100 text-emerald-700"
-              color="#059669"
-              data={days.map((d) => ({ v: d.amount }))}
+              value={data.totalAmount}
+              format={money}
+              tone="emerald"
             />
-            <SparkCard
-              id="spark-qty"
+            <StatCard
+              index={2}
               icon={Package}
               label="Продано, шт."
-              value={String(data.totalQuantity)}
-              tone="bg-amber-100 text-amber-700"
-              color="#C8801A"
-              footer={
-                <p className="pt-3 text-xs text-stone-500">
-                  {data.ordersCount > 0
-                    ? `В среднем ${(data.totalQuantity / data.ordersCount).toFixed(1)} шт. на заказ`
-                    : 'Нет заказов'}
-                </p>
+              value={data.totalQuantity}
+              tone="amber"
+              hint={
+                data.ordersCount > 0
+                  ? `В среднем ${(data.totalQuantity / data.ordersCount).toFixed(1)} шт. на заказ`
+                  : undefined
               }
             />
-            <SparkCard
-              id="spark-paid"
+            <StatCard
+              index={3}
               icon={Wallet}
               label="Получено оплат"
-              value={money(data.receivedPayments)}
-              tone="bg-violet-100 text-violet-700"
-              color="#7c3aed"
-              footer={
-                <div className="pt-2">
-                  <div className="h-2 overflow-hidden rounded-full bg-stone-100">
-                    <div
-                      className="h-full rounded-full bg-violet-500 transition-all"
-                      style={{ width: `${receivedShare}%` }}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-xs text-stone-500">
-                    {receivedShare.toFixed(0)}% от суммы заказов
-                  </p>
-                </div>
-              }
+              value={data.receivedPayments}
+              format={money}
+              tone="violet"
+              hint="Все оплаты, принятые за период"
             />
           </div>
 
@@ -315,7 +232,10 @@ export function SalesTab() {
             </div>
           ) : (
             <>
-              <div className="rounded-2xl border bg-white p-6 shadow-sm">
+              <div
+                className="animate-card-in rounded-2xl border bg-white p-6 shadow-sm"
+                style={{ animationDelay: '320ms' }}
+              >
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-extrabold text-stone-900">Динамика по дням</h2>
@@ -383,12 +303,10 @@ export function SalesTab() {
                         stroke="#C8801A"
                         strokeWidth={3}
                         fill="url(#main-fill)"
-                        dot={
-                          days.length <= 45
-                            ? { r: 3.5, fill: '#fff', stroke: '#C8801A', strokeWidth: 2 }
-                            : false
-                        }
+                        dot={false}
                         activeDot={{ r: 6, fill: '#C8801A', stroke: '#fff', strokeWidth: 3 }}
+                        animationDuration={1400}
+                        animationEasing="ease-out"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -396,7 +314,10 @@ export function SalesTab() {
               </div>
 
               <div className="grid gap-6 xl:grid-cols-[2fr_3fr]">
-                <div className="rounded-2xl border bg-white p-6 shadow-sm">
+                <div
+                  className="animate-card-in rounded-2xl border bg-white p-6 shadow-sm"
+                  style={{ animationDelay: '420ms' }}
+                >
                   <h2 className="mb-2 text-lg font-extrabold text-stone-900">Доли товаров</h2>
                   <p className="text-sm text-stone-500">По сумме продаж</p>
 
@@ -412,6 +333,8 @@ export function SalesTab() {
                           paddingAngle={3}
                           cornerRadius={8}
                           stroke="none"
+                          animationDuration={1200}
+                          animationEasing="ease-out"
                         />
                         <Tooltip
                           formatter={(value) => money(Number(value))}
@@ -428,7 +351,10 @@ export function SalesTab() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border bg-white p-6 shadow-sm">
+                <div
+                  className="animate-card-in rounded-2xl border bg-white p-6 shadow-sm"
+                  style={{ animationDelay: '500ms' }}
+                >
                   <h2 className="mb-5 text-lg font-extrabold text-stone-900">По товарам</h2>
                   <ul className="divide-y divide-stone-100">
                     {products.map((p) => (

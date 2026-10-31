@@ -9,7 +9,6 @@ import {
     RefreshCw,
     Truck,
     User,
-    type LucideIcon,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 
@@ -30,29 +29,10 @@ import {
     type OrderStatus,
 } from './types'
 import { useNavigate } from 'react-router-dom'
+import { StatCard } from '@/components/stat-card'
 
 const PAGE_SIZE = 20
 
-type StatCardProps = {
-    icon: LucideIcon
-    label: string
-    value: number | undefined
-    tone: string
-}
-
-function StatCard({ icon: Icon, label, value, tone }: StatCardProps) {
-    return (
-        <div className="flex items-center gap-4 rounded-2xl border bg-white p-5 shadow-sm">
-            <div className={cn('flex size-12 shrink-0 items-center justify-center rounded-xl', tone)}>
-                <Icon className="size-6" />
-            </div>
-            <div>
-                <p className="text-3xl font-extrabold leading-none text-stone-900">{value ?? '–'}</p>
-                <p className="mt-1.5 text-sm font-medium text-stone-500">{label}</p>
-            </div>
-        </div>
-    )
-}
 
 function Chip({
     active,
@@ -266,24 +246,21 @@ export function OrdersPage() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard icon={Inbox} label="Новые" value={counts.New} tone="bg-sky-100 text-sky-700" />
+                <StatCard index={0} icon={Inbox} label="Новые" value={counts.New} tone="sky" />
                 <StatCard
+                    index={1}
                     icon={Flame}
                     label="Принято и выпекается"
                     value={inProgress}
-                    tone="bg-amber-100 text-amber-700"
+                    tone="amber"
                 />
+                <StatCard index={2} icon={Truck} label="В пути" value={counts.OnTheWay} tone="violet" />
                 <StatCard
-                    icon={Truck}
-                    label="В пути"
-                    value={counts.OnTheWay}
-                    tone="bg-violet-100 text-violet-700"
-                />
-                <StatCard
+                    index={3}
                     icon={CircleCheck}
                     label="Доставлено"
                     value={counts.Delivered}
-                    tone="bg-emerald-100 text-emerald-700"
+                    tone="emerald"
                 />
             </div>
 

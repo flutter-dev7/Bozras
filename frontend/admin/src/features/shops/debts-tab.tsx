@@ -43,24 +43,21 @@ export function DebtsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard index={0} icon={Banknote} label="Общий долг" value={total} format={money} tone="red" />
         <StatCard
-          icon={Banknote}
-          label="Общий долг"
-          value={money(total)}
-          tone="bg-red-100 text-red-700"
-        />
-        <StatCard
+          index={1}
           icon={Store}
           label="Должников"
           value={data?.totalCount ?? items.length}
-          tone="bg-amber-100 text-amber-700"
+          tone="amber"
         />
         <StatCard
+          index={2}
           icon={TriangleAlert}
           label="Превысили лимит"
           value={overLimit}
-          tone="bg-orange-100 text-orange-700"
+          tone="orange"
         />
       </div>
 

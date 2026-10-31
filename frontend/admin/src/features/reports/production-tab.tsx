@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { dushanbeDate, formatDate } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { fetchProduction } from '../reports/api'
+import { fetchProduction } from './api'
+import { AnimatedBar } from '@/components/animated-bar'
 
 
 export function ProductionTab() {
@@ -84,16 +85,18 @@ export function ProductionTab() {
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <StatCard
+              index={0}
               icon={ShoppingBasket}
               label="Заказов на эту дату"
               value={data?.ordersCount}
-              tone="bg-sky-100 text-sky-700"
+              tone="sky"
             />
             <StatCard
+              index={1}
               icon={Wheat}
               label="Всего испечь, шт."
               value={data?.totalQuantity}
-              tone="bg-amber-100 text-amber-700"
+              tone="amber"
             />
           </div>
 
@@ -112,7 +115,7 @@ export function ProductionTab() {
               </div>
             ) : (
               <ul className="divide-y divide-stone-100">
-                {items.map((item) => (
+                {items.map((item, index) => (
                   <li key={item.productId} className="px-6 py-4">
                     <div className="flex items-baseline justify-between gap-4">
                       <p className="text-lg font-bold text-stone-900">{item.productName}</p>
@@ -121,11 +124,8 @@ export function ProductionTab() {
                         <span className="ml-1 text-base font-semibold text-stone-400">шт.</span>
                       </p>
                     </div>
-                    <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-stone-100">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#C8801A] to-[#E3A44A]"
-                        style={{ width: `${(item.quantity / max) * 100}%` }}
-                      />
+                    <div className="mt-3">
+                      <AnimatedBar percent={(item.quantity / max) * 100} delay={index * 80} />
                     </div>
                   </li>
                 ))}
