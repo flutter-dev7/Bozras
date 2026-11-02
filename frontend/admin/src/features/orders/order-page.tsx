@@ -236,6 +236,10 @@ export function OrderPage() {
   const next = nextStatus[order.status]
   const canCancel = order.status === 'New' || order.status === 'Accepted'
   const needsCourier = next === 'OnTheWay' && !order.courierId
+  const todayDushanbe = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Dushanbe' })
+  const tooEarly =
+    (next === 'OnTheWay' || next === 'Delivered') &&
+    order.deliveryDate.slice(0, 10) > todayDushanbe
   const courierList = couriers.data?.items ?? []
 
   const onNext = () => {
@@ -369,7 +373,7 @@ export function OrderPage() {
                 <Button
                   className="h-12 w-full rounded-xl text-base font-bold"
                   onClick={onNext}
-                  disabled={busy || needsCourier}
+                  disabled={busy || needsCourier || tooEarly}
                 >
                   {statusMutation.isPending && <Loader2 className="size-5 animate-spin" />}
                   {nextLabel[order.status]}
@@ -381,6 +385,16 @@ export function OrderPage() {
                     <p>
                       Сначала назначьте курьера: выберите его в блоке «Курьер» ниже, он будет
                       назначен сразу.
+                    </p>
+                  </div>
+                )}
+
+                {tooEarly && (
+                  <div className="flex gap-3 rounded-xl bg-sky-50 p-3.5 text-sm text-sky-800">
+                    <TriangleAlert className="mt-0.5 size-4 shrink-0" />
+                    <p>
+                      Доставка запланирована на {formatDate(order.deliveryDate)}. Отправить заказ в
+                      путь или отметить доставленным можно только в этот день.
                     </p>
                   </div>
                 )}

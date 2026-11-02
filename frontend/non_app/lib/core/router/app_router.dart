@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:non_app/features/notifications/presentation/widgets/push_bootstrap.dart';
 import 'package:non_app/features/orders/domain/entities/order.dart';
 import 'package:non_app/features/orders/presentation/pages/order_details_page.dart';
 import 'package:non_app/features/orders/presentation/pages/order_form_page.dart';
@@ -96,7 +97,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const PushBootstrap(child: HomePage()),
       ),
       GoRoute(
         path: AppRoutes.changePassword,

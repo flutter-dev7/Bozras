@@ -3,7 +3,7 @@ class ApiConstants {
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.123.35:5200',
+    defaultValue: 'http://192.168.1.5:5200',
   );
 
   static const Duration connectTimeout = Duration(seconds: 6);

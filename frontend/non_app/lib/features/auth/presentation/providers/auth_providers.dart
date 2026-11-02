@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:non_app/features/notifications/presentation/provider/notifications_providers.dart';
 
 import '../../../../core/providers/core_providers.dart';
 import '../../data/datasources/auth_remote_data_source.dart';
@@ -108,11 +109,13 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
 
   Future<void> logout() async {
     await ref.read(logoutUseCaseProvider)();
+    await ref.read(pushServiceProvider).stop();
     state = const AsyncData<AuthUser?>(null);
   }
 
   Future<void> logoutAll() async {
     await ref.read(logoutAllUseCaseProvider)();
+    await ref.read(pushServiceProvider).stop();
     state = const AsyncData<AuthUser?>(null);
   }
 }

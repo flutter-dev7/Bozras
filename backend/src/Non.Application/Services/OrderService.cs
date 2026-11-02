@@ -298,6 +298,16 @@ public class OrderService : IOrderService
 
         if (request.Status != OrderStatus.Delivered && request.PaymentAmount.HasValue)
             return Result<OrderDetailsResponse>.Failure("Сумма оплаты указывается только при доставке.");
+        
+        if (request.Status is OrderStatus.OnTheWay or OrderStatus.Delivered)
+        {
+            var today = DateOnly.FromDateTime(
+                _timeProvider.GetUtcNow().ToOffset(BusinessRules.UtcOffset).DateTime);
+
+            if (order.DeliveryDate > today)
+                return Result<OrderDetailsResponse>.Failure(
+                    $"Доставка запланирована на {order.DeliveryDate:dd.MM.yyyy}. Раньше этой даты заказ отправить нельзя.");
+        }
 
         if (request.Status == OrderStatus.Delivered)
             return await DeliverAsync(order, request, caller, ct);
