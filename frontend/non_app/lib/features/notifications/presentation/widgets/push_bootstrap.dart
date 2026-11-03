@@ -2,6 +2,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:non_app/features/notifications/presentation/provider/inbox_provider.dart';
 import 'package:non_app/features/notifications/presentation/provider/notifications_providers.dart';
 
 import '../../../../core/router/app_routes.dart';
@@ -29,9 +30,13 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
 
   Future<void> _start() async {
     try {
-      await ref.read(pushServiceProvider).start(
+      await ref
+          .read(pushServiceProvider)
+          .start(
             onOpenOrder: _openOrder,
             onForeground: _onForeground,
+            onOpened: (m) =>
+                ref.read(inboxProvider.notifier).add(m, read: true),
           );
     } catch (e) {
       debugPrint('Push start failed: $e');
@@ -51,6 +56,7 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
     ref.invalidate(orderDetailsProvider);
     ref.invalidate(courierTodayProvider);
     ref.invalidate(myBalanceProvider);
+    ref.read(inboxProvider.notifier).add(message);
 
     final notification = message.notification;
 
@@ -78,7 +84,10 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
           ),
           action: orderId == null
               ? null
-              : SnackBarAction(label: 'Открыть', onPressed: () => _openOrder(orderId)),
+              : SnackBarAction(
+                  label: 'Открыть',
+                  onPressed: () => _openOrder(orderId),
+                ),
         ),
       );
   }

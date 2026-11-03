@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:non_app/core/network/api_exception.dart';
+import 'package:non_app/core/utils/app_snackbar.dart';
+import 'package:non_app/core/utils/navigation_launcher.dart';
 import 'package:non_app/core/utils/record_visit.dart';
+import 'package:non_app/features/shops/presentation/pages/map_picker_page.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/router/app_routes.dart';
@@ -39,6 +44,8 @@ class ShopDetailsPage extends ConsumerWidget {
           children: [
             _InfoCard(shop: shop),
             const SizedBox(height: 16),
+            _LocationCard(shop: shop),
+            const SizedBox(height: 16),
             balance.when(
               loading: () => const Padding(
                 padding: EdgeInsets.all(32),
@@ -48,7 +55,8 @@ class ShopDetailsPage extends ConsumerWidget {
                 children: [
                   InlineMessage(message: errorText(error)),
                   TextButton(
-                    onPressed: () => ref.invalidate(shopBalanceProvider(shop.id)),
+                    onPressed: () =>
+                        ref.invalidate(shopBalanceProvider(shop.id)),
                     child: const Text('Повторить'),
                   ),
                 ],
@@ -92,15 +100,24 @@ class _InfoCard extends StatelessWidget {
                 children: [
                   Text(
                     shop.name,
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     shop.address,
-                    style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  Text(shop.phone, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Text(
+                    shop.phone,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                   if (shop.contactName != null) ...[
                     const SizedBox(height: 4),
                     Text(
@@ -180,9 +197,15 @@ class _BalanceSection extends StatelessWidget {
         Card(
           child: Column(
             children: [
-              _Line(label: 'Доставлено на сумму', value: Formatters.money(balance.deliveredTotal)),
+              _Line(
+                label: 'Доставлено на сумму',
+                value: Formatters.money(balance.deliveredTotal),
+              ),
               const Divider(),
-              _Line(label: 'Оплачено', value: Formatters.money(balance.paidTotal)),
+              _Line(
+                label: 'Оплачено',
+                value: Formatters.money(balance.paidTotal),
+              ),
               const Divider(),
               _Line(
                 label: 'Заказы в долг в пути',
@@ -201,7 +224,10 @@ class _BalanceSection extends StatelessWidget {
           for (final order in balance.unpaidOrders) ...[
             Card(
               child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 leading: const Icon(AppIcons.receipt, color: AppDecor.heroMid),
                 title: Text(
                   Formatters.date(order.deliveryDate),
@@ -212,9 +238,13 @@ class _BalanceSection extends StatelessWidget {
                 ),
                 trailing: Text(
                   Formatters.money(order.remainingAmount),
-                  style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.error),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.error,
+                  ),
                 ),
-                onTap: () => context.push(AppRoutes.orderDetailsFor(order.orderId)),
+                onTap: () =>
+                    context.push(AppRoutes.orderDetailsFor(order.orderId)),
               ),
             ),
             const SizedBox(height: 8),
@@ -240,11 +270,123 @@ class _Line extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
         ],
+      ),
+    );
+  }
+}
+
+class _LocationCard extends ConsumerStatefulWidget {
+  const _LocationCard({required this.shop});
+
+  final Shop shop;
+
+  @override
+  ConsumerState<_LocationCard> createState() => _LocationCardState();
+}
+
+class _LocationCardState extends ConsumerState<_LocationCard> {
+  LatLng? _point;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final shop = widget.shop;
+
+    if (shop.hasLocation) _point = LatLng(shop.latitude!, shop.longitude!);
+  }
+
+  Future<void> _change() async {
+    final picked = await pickLocation(context, initial: _point);
+
+    if (picked == null || !mounted) return;
+
+    setState(() => _saving = true);
+
+    try {
+      await ref.read(setShopLocationUseCaseProvider)(
+        widget.shop.id,
+        latitude: picked.latitude,
+        longitude: picked.longitude,
+      );
+
+      ref.invalidate(shopsProvider);
+
+      if (!mounted) return;
+
+      setState(() => _point = picked);
+      AppSnackBar.show(context, 'Расположение сохранено');
+    } on ApiException catch (e) {
+      if (mounted) AppSnackBar.show(context, e.message, isError: true);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final point = _point;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.map_outlined, color: AppDecor.heroMid),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    point == null
+                        ? 'Расположение не указано'
+                        : '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => openRoute(
+                      context,
+                      latitude: point?.latitude,
+                      longitude: point?.longitude,
+                      address: widget.shop.address,
+                    ),
+                    child: const Text('Маршрут'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _saving ? null : _change,
+                    child: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(point == null ? 'Указать' : 'Изменить'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

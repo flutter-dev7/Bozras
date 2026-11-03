@@ -29,4 +29,8 @@ public interface IAuthService
     Task<Result> LogoutAllAsync(Guid userId, CancellationToken ct = default);
 
     Task<Result<UserResponse>> GetCurrentUserAsync(Guid userId, CancellationToken ct = default);
+    
+    Task<Result<List<SessionResponse>>> GetSessionsAsync(Guid userId, Guid? currentSessionId, CancellationToken ct = default);
+
+    Task<Result> RevokeSessionAsync(Guid userId, Guid sessionId, CancellationToken ct = default);
 }

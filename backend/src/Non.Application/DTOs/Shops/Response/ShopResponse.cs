@@ -13,4 +13,6 @@ public class ShopResponse
     public Guid? OwnerUserId { get; set; }
     public string? OwnerPhone { get; set; }
     public string? OwnerName { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 }

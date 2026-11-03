@@ -102,6 +102,20 @@ public class AuthController : ApiControllerBase
     {
         return ToActionResult(await _authService.LogoutAllAsync(CurrentUserId, ct));
     }
+    
+    [Authorize]
+    [HttpGet("sessions")]
+    public async Task<IActionResult> Sessions([FromQuery] Guid? currentSessionId, CancellationToken ct)
+    {
+        return ToActionResult(await _authService.GetSessionsAsync(CurrentUserId, currentSessionId, ct));
+    }
+
+    [Authorize]
+    [HttpDelete("sessions/{sessionId:guid}")]
+    public async Task<IActionResult> RevokeSession(Guid sessionId, CancellationToken ct)
+    {
+        return ToActionResult(await _authService.RevokeSessionAsync(CurrentUserId, sessionId, ct));
+    }
 
     [Authorize]
     [HttpGet("me")]

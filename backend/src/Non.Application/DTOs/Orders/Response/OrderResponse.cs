@@ -8,6 +8,8 @@ public class OrderResponse
     public string ShopName { get; set; } = string.Empty;
     public string ShopAddress { get; set; } = string.Empty;
     public string ShopPhone { get; set; } = string.Empty;
+    public double? ShopLatitude { get; set; }
+    public double? ShopLongitude { get; set; }
 
     public string Status { get; set; } = string.Empty;
     public DateOnly DeliveryDate { get; set; }

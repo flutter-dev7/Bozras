@@ -10,8 +10,8 @@ class PushService {
   PushService({
     required SaveFcmTokenUseCase saveToken,
     required DeleteFcmTokenUseCase deleteToken,
-  })  : _saveToken = saveToken,
-        _deleteToken = deleteToken;
+  }) : _saveToken = saveToken,
+       _deleteToken = deleteToken;
 
   final SaveFcmTokenUseCase _saveToken;
   final DeleteFcmTokenUseCase _deleteToken;
@@ -20,8 +20,9 @@ class PushService {
   bool _listening = false;
   String? _token;
 
-  void Function(String orderId)? _onOpenOrder;
+    void Function(String orderId)? _onOpenOrder;
   void Function(RemoteMessage message)? _onForeground;
+  void Function(RemoteMessage message)? _onOpened;
 
   static String? orderIdOf(RemoteMessage message) {
     final value = message.data['orderId'];
@@ -32,10 +33,12 @@ class PushService {
   Future<void> start({
     required void Function(String orderId) onOpenOrder,
     required void Function(RemoteMessage message) onForeground,
+    void Function(RemoteMessage message)? onOpened,
   }) async {
     _active = true;
     _onOpenOrder = onOpenOrder;
     _onForeground = onForeground;
+    _onOpened = onOpened;
 
     final messaging = FirebaseMessaging.instance;
 
@@ -51,7 +54,9 @@ class PushService {
       messaging.onTokenRefresh.listen((value) {
         if (_active) _register(value);
       });
-      FirebaseMessaging.onMessage.listen((message) => _onForeground?.call(message));
+      FirebaseMessaging.onMessage.listen(
+        (message) => _onForeground?.call(message),
+      );
       FirebaseMessaging.onMessageOpenedApp.listen(_open);
     }
 
@@ -95,6 +100,8 @@ class PushService {
   }
 
   void _open(RemoteMessage message) {
+    _onOpened?.call(message);
+
     final id = orderIdOf(message);
 
     if (id != null) _onOpenOrder?.call(id);

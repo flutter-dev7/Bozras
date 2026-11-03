@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:non_app/core/storage/session_id_storage.dart';
+import 'package:non_app/core/utils/device_name.dart';
+
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../domain/entities/auth_user.dart';
@@ -12,8 +15,8 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
     required AuthRemoteDataSource remote,
     required TokenStorage tokens,
-  })  : _remote = remote,
-        _tokens = tokens;
+  }) : _remote = remote,
+       _tokens = tokens;
 
   final AuthRemoteDataSource _remote;
   final TokenStorage _tokens;
@@ -29,7 +32,8 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return user;
     } on ApiException catch (e) {
-      final sessionIsDead = e.type == ApiErrorType.unauthorized ||
+      final sessionIsDead =
+          e.type == ApiErrorType.unauthorized ||
           e.type == ApiErrorType.forbidden ||
           e.type == ApiErrorType.notFound;
 
@@ -60,6 +64,10 @@ class AuthRepositoryImpl implements AuthRepository {
     );
     await _tokens.saveUser(jsonEncode(response.user.toJson()));
 
+    final sessionId = response.sessionId;
+
+    if (sessionId != null) await SessionIdStorage.save(sessionId);
+
     return response.user;
   }
 
@@ -81,29 +89,51 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<AuthUser> verifyEmail({required String email, required String code}) async {
+  Future<AuthUser> verifyEmail({
+    required String email,
+    required String code,
+  }) async {
     return _saveSession(await _remote.verifyEmail(email: email, code: code));
   }
 
   @override
-  Future<void> resendVerification(String email) => _remote.resendVerification(email);
+  Future<void> resendVerification(String email) =>
+      _remote.resendVerification(email);
 
   @override
-  Future<AuthUser> login({required String email, required String password}) async {
-    return _saveSession(await _remote.login(email: email, password: password));
+  Future<AuthUser> login({
+    required String email,
+    required String password,
+  }) async {
+    final response = await _remote.login(
+      email: email,
+      password: password,
+      deviceName: await DeviceName.read(),
+    );
+
+    return _saveSession(response);
   }
 
   @override
   Future<void> forgotPassword(String email) => _remote.forgotPassword(email);
 
   @override
-  Future<String> verifyResetCode({required String email, required String code}) {
+  Future<String> verifyResetCode({
+    required String email,
+    required String code,
+  }) {
     return _remote.verifyResetCode(email: email, code: code);
   }
 
   @override
-  Future<void> resetPassword({required String resetToken, required String newPassword}) {
-    return _remote.resetPassword(resetToken: resetToken, newPassword: newPassword);
+  Future<void> resetPassword({
+    required String resetToken,
+    required String newPassword,
+  }) {
+    return _remote.resetPassword(
+      resetToken: resetToken,
+      newPassword: newPassword,
+    );
   }
 
   @override
@@ -114,6 +144,7 @@ class AuthRepositoryImpl implements AuthRepository {
     final response = await _remote.changePassword(
       currentPassword: currentPassword,
       newPassword: newPassword,
+      deviceName: await DeviceName.read(),
     );
 
     return _saveSession(response);

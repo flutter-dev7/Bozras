@@ -47,6 +47,8 @@ class Order {
     required this.createdAt,
     required this.items,
     required this.history,
+    this.shopLatitude,
+    this.shopLongitude,
   });
 
   final String id;
@@ -66,9 +68,15 @@ class Order {
   final List<OrderItem> items;
   final List<OrderStatusEntry> history;
 
+  final double? shopLatitude;
+  final double? shopLongitude;
+
+  bool get hasShopLocation => shopLatitude != null && shopLongitude != null;
+
   bool get canEdit => status == OrderStatus.created;
 
-  bool get canCancel => status == OrderStatus.created || status == OrderStatus.accepted;
+  bool get canCancel =>
+      status == OrderStatus.created || status == OrderStatus.accepted;
 
   String get number => id.substring(0, 6).toUpperCase();
 }

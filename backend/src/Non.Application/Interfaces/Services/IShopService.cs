@@ -21,4 +21,8 @@ public interface IShopService
     Task<Result<ShopResponse>> SetOwnerAsync(Guid id, SetOwnerRequest request, CancellationToken ct = default);
 
     Task<Result<ShopResponse>> SetDebtLimitAsync(Guid id, SetDebtLimitRequest request, CancellationToken ct = default);
+    
+    Task<Result<ShopResponse>> SetLocationAsync(Guid id, SetLocationRequest request, CancellationToken ct = default);
+
+    Task<Result<ShopResponse>> SetMyLocationAsync(Guid userId, SetLocationRequest request, CancellationToken ct = default);
 }

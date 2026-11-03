@@ -108,14 +108,14 @@ class AuthNotifier extends AsyncNotifier<AuthUser?> {
   }
 
   Future<void> logout() async {
-    await ref.read(logoutUseCaseProvider)();
     await ref.read(pushServiceProvider).stop();
+    await ref.read(logoutUseCaseProvider)();
     state = const AsyncData<AuthUser?>(null);
   }
 
   Future<void> logoutAll() async {
-    await ref.read(logoutAllUseCaseProvider)();
     await ref.read(pushServiceProvider).stop();
+    await ref.read(logoutAllUseCaseProvider)();
     state = const AsyncData<AuthUser?>(null);
   }
 }

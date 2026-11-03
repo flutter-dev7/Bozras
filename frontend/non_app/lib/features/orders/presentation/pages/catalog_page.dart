@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:non_app/core/utils/image_url.dart';
+import 'package:non_app/features/notifications/presentation/widgets/notifications_bell.dart';
+import 'package:non_app/features/orders/presentation/widgets/cutoff_banner.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/router/app_routes.dart';
@@ -37,7 +40,11 @@ class _CatalogView extends ConsumerWidget {
     final cart = ref.watch(cartProvider);
 
     return Scaffold(
-      appBar: const AppTopBar(title: 'Хлеб', showBack: false),
+      appBar: const AppTopBar(
+        title: 'Хлеб',
+        showBack: false,
+        actions: [NotificationsBell()],
+      ),
       body: products.when(
         loading: () => const LoadingView(),
         error: (error, _) => ErrorView(
@@ -64,10 +71,11 @@ class _CatalogView extends ConsumerWidget {
               : ListView.separated(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                  itemCount: list.length,
+                  itemCount: list.length + 1,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) =>
-                      _ProductTile(product: list[index]),
+                  itemBuilder: (context, index) => index == 0
+                      ? const CutoffBanner()
+                      : _ProductTile(product: list[index - 1]),
                 ),
         ),
       ),
@@ -196,12 +204,14 @@ class _ProductImage extends StatelessWidget {
       ),
     );
 
-    if (url == null || url!.isEmpty) return placeholder;
+    final resolved = resolveImageUrl(url);
+
+    if (resolved == null) return placeholder;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Image.network(
-        url!,
+        resolved,
         width: 64,
         height: 64,
         fit: BoxFit.cover,

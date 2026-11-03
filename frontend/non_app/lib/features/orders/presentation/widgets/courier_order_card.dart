@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:non_app/core/utils/navigation_launcher.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/router/app_routes.dart';
@@ -13,7 +14,11 @@ import 'courier_action_button.dart';
 import 'status_badge.dart';
 
 class CourierOrderCard extends StatelessWidget {
-  const CourierOrderCard({super.key, required this.order, this.showAction = true});
+  const CourierOrderCard({
+    super.key,
+    required this.order,
+    this.showAction = true,
+  });
 
   final Order order;
   final bool showAction;
@@ -38,7 +43,10 @@ class CourierOrderCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       order.shopName,
-                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                      ),
                     ),
                   ),
                   StatusBadge(status: order.status),
@@ -48,7 +56,11 @@ class CourierOrderCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(AppIcons.location, size: 18, color: AppColors.muted),
+                  const Icon(
+                    AppIcons.location,
+                    size: 18,
+                    color: AppColors.muted,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -82,7 +94,10 @@ class CourierOrderCard extends StatelessWidget {
                   ),
                   Text(
                     Formatters.money(order.totalAmount),
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
+                    ),
                   ),
                 ],
               ),
@@ -94,6 +109,17 @@ class CourierOrderCard extends StatelessWidget {
                       icon: AppIcons.phone,
                       tooltip: 'Позвонить',
                       onPressed: () => callPhone(context, order.shopPhone),
+                    ),
+                    const SizedBox(width: 12),
+                    AppIconButton(
+                      icon: Icons.directions_rounded,
+                      tooltip: 'Маршрут',
+                      onPressed: () => openRoute(
+                        context,
+                        latitude: order.shopLatitude,
+                        longitude: order.shopLongitude,
+                        address: order.shopAddress,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(child: CourierActionButton(order: order)),

@@ -130,7 +130,8 @@ public class AuthService : IAuthService
 
         user.EmailConfirmed = true;
 
-        return Result<AuthResponse>.Success(await IssueTokensAsync(user, ct));
+        return Result<AuthResponse>.Success(await IssueTokensAsync(user, null, ct));
+        
     }
 
     public async Task<Result> ResendVerificationAsync(EmailRequest request, CancellationToken ct = default)
@@ -177,7 +178,8 @@ public class AuthService : IAuthService
 
         await _cacheService.RemoveAsync(failuresKey);
 
-        return Result<AuthResponse>.Success(await IssueTokensAsync(user, ct));
+        return Result<AuthResponse>.Success(await IssueTokensAsync(user, request.DeviceName, ct));
+        
     }
 
     public async Task<Result> ForgotPasswordAsync(EmailRequest request, CancellationToken ct = default)
@@ -293,7 +295,7 @@ public class AuthService : IAuthService
 
         await RevokeAllAsync(user.Id, _timeProvider.GetUtcNow().UtcDateTime, ct);
 
-        return Result<AuthResponse>.Success(await IssueTokensAsync(user, ct));
+        return Result<AuthResponse>.Success(await IssueTokensAsync(user, null, ct));
     }
 
     public async Task<Result<AuthResponse>> RefreshAsync(RefreshTokenRequest request, CancellationToken ct = default)
@@ -321,8 +323,8 @@ public class AuthService : IAuthService
 
         await using var transaction = await _unitOfWork.BeginTransactionAsync(ct);
 
-        var newToken = CreateRefreshToken(user.Id, now, out var rawRefreshToken);
-
+        var newToken = CreateRefreshToken(user.Id, now, stored.SessionId, stored.DeviceName, out var rawRefreshToken);
+        
         if (!await _refreshTokenRepository.TryRevokeAsync(stored.Id, newToken.Id, now, ct))
             return Unauthorized("Токен уже использован. Повторите запрос или войдите заново.");
 
@@ -331,7 +333,9 @@ public class AuthService : IAuthService
         await _unitOfWork.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
 
-        return Result<AuthResponse>.Success(BuildResponse(user, rawRefreshToken, newToken.ExpiresAt));
+        return Result<AuthResponse>.Success(
+            BuildResponse(user, rawRefreshToken, newToken.ExpiresAt, newToken.SessionId));
+        
     }
 
     public async Task<Result> LogoutAsync(RefreshTokenRequest request, CancellationToken ct = default)
@@ -350,6 +354,44 @@ public class AuthService : IAuthService
     public async Task<Result> LogoutAllAsync(Guid userId, CancellationToken ct = default)
     {
         await RevokeAllAsync(userId, _timeProvider.GetUtcNow().UtcDateTime, ct);
+
+        return Result.Success();
+    }
+    
+    public async Task<Result<List<SessionResponse>>> GetSessionsAsync(
+        Guid userId, Guid? currentSessionId, CancellationToken ct = default)
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var active = await _refreshTokenRepository.GetActiveByUserAsync(userId, now, ct);
+
+        var items = active
+            .OrderByDescending(t => t.CreatedAt)
+            .Select(t => new SessionResponse
+            {
+                Id = t.SessionId,
+                DeviceName = t.DeviceName ?? "Неизвестное устройство",
+                LastActiveAt = t.CreatedAt,
+                ExpiresAt = t.ExpiresAt,
+                IsCurrent = currentSessionId.HasValue && t.SessionId == currentSessionId.Value
+            })
+            .ToList();
+
+        return Result<List<SessionResponse>>.Success(items);
+    }
+
+    public async Task<Result> RevokeSessionAsync(Guid userId, Guid sessionId, CancellationToken ct = default)
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var active = await _refreshTokenRepository.GetActiveByUserAsync(userId, now, ct);
+        var tokens = active.Where(t => t.SessionId == sessionId).ToList();
+
+        if (tokens.Count == 0)
+            return Result.Failure("Устройство не найдено.", ErrorType.NotFound);
+
+        foreach (var token in tokens)
+            token.RevokedAt = now;
+
+        await _unitOfWork.SaveChangesAsync(ct);
 
         return Result.Success();
     }
@@ -453,29 +495,30 @@ public class AuthService : IAuthService
         await _cacheService.SetAsync(key, counter, FailureWindow);
     }
 
-    private async Task<AuthResponse> IssueTokensAsync(User user, CancellationToken ct)
+    private async Task<AuthResponse> IssueTokensAsync(User user, string? deviceName, CancellationToken ct)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        var refreshToken = CreateRefreshToken(user.Id, now, out var rawRefreshToken);
+        var sessionId = Guid.NewGuid();
+        var refreshToken = CreateRefreshToken(user.Id, now, sessionId, CleanDeviceName(deviceName), out var rawRefreshToken);
 
         await _refreshTokenRepository.AddAsync(refreshToken, ct);
         await _refreshTokenRepository.RemoveExpiredAsync(user.Id, now, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return BuildResponse(user, rawRefreshToken, refreshToken.ExpiresAt);
+        return BuildResponse(user, rawRefreshToken, refreshToken.ExpiresAt, sessionId);
     }
 
-    private async Task RevokeAllAsync(Guid userId, DateTime now, CancellationToken ct)
+    private static string? CleanDeviceName(string? value)
     {
-        var active = await _refreshTokenRepository.GetActiveByUserAsync(userId, now, ct);
+        var name = value?.Trim();
 
-        foreach (var token in active)
-            token.RevokedAt = now;
+        if (string.IsNullOrEmpty(name)) return null;
 
-        await _unitOfWork.SaveChangesAsync(ct);
+        return name.Length > 200 ? name[..200] : name;
     }
 
-    private static RefreshToken CreateRefreshToken(Guid userId, DateTime now, out string rawToken)
+    private static RefreshToken CreateRefreshToken(
+        Guid userId, DateTime now, Guid sessionId, string? deviceName, out string rawToken)
     {
         rawToken = RefreshTokenHasher.Generate();
 
@@ -483,11 +526,13 @@ public class AuthService : IAuthService
         {
             UserId = userId,
             TokenHash = RefreshTokenHasher.Hash(rawToken),
-            ExpiresAt = now.Add(RefreshTokenLifetime)
+            ExpiresAt = now.Add(RefreshTokenLifetime),
+            SessionId = sessionId,
+            DeviceName = deviceName
         };
     }
 
-    private AuthResponse BuildResponse(User user, string rawRefreshToken, DateTime refreshExpiresAt)
+    private AuthResponse BuildResponse(User user, string rawRefreshToken, DateTime refreshExpiresAt, Guid sessionId)
     {
         var accessToken = _jwtTokenGenerator.Generate(user);
 
@@ -497,6 +542,7 @@ public class AuthService : IAuthService
             ExpiresAt = accessToken.ExpiresAt,
             RefreshToken = rawRefreshToken,
             RefreshTokenExpiresAt = refreshExpiresAt,
+            SessionId = sessionId,
             User = ToResponse(user)
         };
     }
@@ -538,5 +584,21 @@ public class AuthService : IAuthService
     private sealed class ResetTokenEntry
     {
         public Guid UserId { get; set; }
+    }
+    
+    private async Task RevokeAllAsync(
+        Guid userId,
+        DateTime now,
+        CancellationToken ct)
+    {
+        var activeTokens = await _refreshTokenRepository
+            .GetActiveByUserAsync(userId, now, ct);
+
+        foreach (var token in activeTokens)
+        {
+            token.RevokedAt = now;
+        }
+
+        await _unitOfWork.SaveChangesAsync(ct);
     }
 }

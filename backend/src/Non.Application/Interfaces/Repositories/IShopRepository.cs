@@ -16,6 +16,8 @@ public interface IShopRepository
 
     Task<(List<Shop> Items, int TotalCount)> GetPagedAsync(
         string? search, bool? isActive, int page, int pageSize, CancellationToken ct = default);
+    
+    Task<Shop?> GetByOwnerIdAsync(Guid userId, CancellationToken ct = default);
 
     Task AddAsync(Shop shop, CancellationToken ct = default);
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:non_app/features/shops/presentation/widgets/location_field.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/utils/submit_state_mixin.dart';
@@ -26,6 +28,7 @@ class _CreateShopViewState extends ConsumerState<CreateShopView>
   final _address = TextEditingController();
   final _contact = TextEditingController();
   late final TextEditingController _phone;
+  LatLng? _location;
 
   @override
   void initState() {
@@ -33,6 +36,7 @@ class _CreateShopViewState extends ConsumerState<CreateShopView>
 
     final user = ref.read(authProvider).valueOrNull;
     _phone = TextEditingController(text: Validators.phoneDigits(user?.phone));
+    _contact.text = user?.fullName ?? '';
   }
 
   @override
@@ -48,11 +52,15 @@ class _CreateShopViewState extends ConsumerState<CreateShopView>
     return submit(_formKey, () {
       final contact = _contact.text.trim();
 
-      return ref.read(myShopProvider.notifier).create(
+      return ref
+          .read(myShopProvider.notifier)
+          .create(
             name: _name.text.trim(),
             address: _address.text.trim(),
             phone: Validators.toApiPhone(_phone.text),
             contactName: contact.isEmpty ? null : contact,
+            latitude: _location?.latitude,
+            longitude: _location?.longitude,
           );
     });
   }
@@ -68,7 +76,8 @@ class _CreateShopViewState extends ConsumerState<CreateShopView>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const InlineMessage(
-                message: 'Чтобы заказывать хлеб, расскажите о вашем магазине. '
+                message:
+                    'Чтобы заказывать хлеб, расскажите о вашем магазине. '
                     'Это нужно один раз.',
                 isError: false,
               ),
@@ -105,7 +114,9 @@ class _CreateShopViewState extends ConsumerState<CreateShopView>
                       prefixText: '+992 ',
                       keyboardType: TextInputType.phone,
                       textInputAction: TextInputAction.next,
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9 ]'))],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9 ]')),
+                      ],
                       validator: Validators.phone,
                       enabled: !loading,
                     ),
@@ -119,6 +130,12 @@ class _CreateShopViewState extends ConsumerState<CreateShopView>
                       onSubmitted: (_) => _submit(),
                       enabled: !loading,
                     ),
+                    const SizedBox(height: 18),
+                    LocationField(
+                      value: _location,
+                      enabled: !loading,
+                      onChanged: (point) => setState(() => _location = point),
+                    ),
                   ],
                 ),
               ),
@@ -127,7 +144,11 @@ class _CreateShopViewState extends ConsumerState<CreateShopView>
                 InlineMessage(message: error!),
               ],
               const SizedBox(height: 24),
-              PrimaryButton(label: 'Создать магазин', onPressed: _submit, isLoading: loading),
+              PrimaryButton(
+                label: 'Создать магазин',
+                onPressed: _submit,
+                isLoading: loading,
+              ),
             ],
           ),
         ),

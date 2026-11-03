@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:non_app/features/notifications/presentation/widgets/notifications_bell.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/theme/app_decor.dart';
@@ -23,7 +24,11 @@ class CourierTodayPage extends ConsumerWidget {
     final orders = ref.watch(courierTodayProvider);
 
     return Scaffold(
-      appBar: const AppTopBar(title: 'Доставка сегодня', showBack: false),
+      appBar: const AppTopBar(
+        title: 'Доставка сегодня',
+        showBack: false,
+        actions: [NotificationsBell()],
+      ),
       body: orders.when(
         loading: () => const LoadingView(),
         error: (error, _) => ErrorView(

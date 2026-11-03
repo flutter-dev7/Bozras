@@ -21,6 +21,8 @@ class OrderModel extends Order {
     required super.createdAt,
     required super.items,
     required super.history,
+    super.shopLatitude,
+    super.shopLongitude,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,8 @@ class OrderModel extends Order {
       shopName: json['shopName'] as String? ?? '',
       shopAddress: json['shopAddress'] as String? ?? '',
       shopPhone: json['shopPhone'] as String? ?? '',
+      shopLatitude: (json['shopLatitude'] as num?)?.toDouble(),
+      shopLongitude: (json['shopLongitude'] as num?)?.toDouble(),
       status: OrderStatus.parse(json['status'] as String?),
       deliveryDate: Formatters.parseDate(json['deliveryDate'] as String),
       paymentType: PaymentType.parse(json['paymentType'] as String?),

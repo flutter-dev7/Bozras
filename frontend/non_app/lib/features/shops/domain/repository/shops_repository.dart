@@ -11,6 +11,8 @@ abstract class ShopsRepository {
     required String address,
     required String phone,
     String? contactName,
+    double? latitude,
+    double? longitude,
   });
 
   Future<ShopBalance> getMyBalance();
@@ -26,6 +28,14 @@ abstract class ShopsRepository {
     required String address,
     required String phone,
     String? contactName,
+    double? latitude,
+    double? longitude,
+  });
+
+  Future<Shop> setShopLocation(
+    String id, {
+    double? latitude,
+    double? longitude,
   });
 
   Future<ShopBalance> getShopBalance(String id);

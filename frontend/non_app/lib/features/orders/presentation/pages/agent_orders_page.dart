@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:non_app/features/notifications/presentation/widgets/notifications_bell.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/router/app_routes.dart';
@@ -56,7 +57,11 @@ class _AgentOrdersPageState extends ConsumerState<AgentOrdersPage> {
     final orders = ref.watch(ordersProvider);
 
     return Scaffold(
-      appBar: const AppTopBar(title: 'Заказы', showBack: false),
+      appBar: const AppTopBar(
+        title: 'Заказы',
+        showBack: false,
+        actions: [NotificationsBell()],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: null,
         backgroundColor: AppDecor.heroMid,

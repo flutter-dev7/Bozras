@@ -8,17 +8,23 @@ class ShopsRemoteDataSource {
 
   final ApiClient _client;
 
-  Map<String, dynamic> _body({
+    Map<String, dynamic> _body({
     required String name,
     required String address,
     required String phone,
     String? contactName,
+    double? latitude,
+    double? longitude,
   }) {
     return {
       'name': name,
       'address': address,
       'phone': phone,
       if (contactName != null) 'contactName': contactName,
+      if (latitude != null && longitude != null) ...{
+        'latitude': latitude,
+        'longitude': longitude,
+      },
     };
   }
 
@@ -28,15 +34,24 @@ class ShopsRemoteDataSource {
     return ShopModel.fromJson(data as Map<String, dynamic>);
   }
 
-  Future<ShopModel> createMyShop({
+    Future<ShopModel> createMyShop({
     required String name,
     required String address,
     required String phone,
     String? contactName,
+    double? latitude,
+    double? longitude,
   }) async {
     final data = await _client.post(
       '/api/Shops/my',
-      data: _body(name: name, address: address, phone: phone, contactName: contactName),
+      data: _body(
+        name: name,
+        address: address,
+        phone: phone,
+        contactName: contactName,
+        latitude: latitude,
+        longitude: longitude,
+      ),
     );
 
     return ShopModel.fromJson(data as Map<String, dynamic>);
@@ -68,15 +83,33 @@ class ShopsRemoteDataSource {
     return PagedResult.fromJson(data, ShopModel.fromJson, page: page, pageSize: pageSize);
   }
 
-  Future<ShopModel> createShop({
+    Future<ShopModel> createShop({
     required String name,
     required String address,
     required String phone,
     String? contactName,
+    double? latitude,
+    double? longitude,
   }) async {
     final data = await _client.post(
       '/api/Shops',
-      data: _body(name: name, address: address, phone: phone, contactName: contactName),
+      data: _body(
+        name: name,
+        address: address,
+        phone: phone,
+        contactName: contactName,
+        latitude: latitude,
+        longitude: longitude,
+      ),
+    );
+
+    return ShopModel.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<ShopModel> setShopLocation(String id, {double? latitude, double? longitude}) async {
+    final data = await _client.put(
+      '/api/Shops/$id/location',
+      data: {'latitude': latitude, 'longitude': longitude},
     );
 
     return ShopModel.fromJson(data as Map<String, dynamic>);

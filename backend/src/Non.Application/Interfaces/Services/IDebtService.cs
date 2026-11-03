@@ -8,8 +8,7 @@ public interface IDebtService
 {
     Task<ShopBalance> GetBalanceAsync(Guid shopId, CancellationToken ct = default);
 
-    Task<Result<ShopBalanceResponse>> GetShopBalanceAsync(Guid shopId, CancellationToken ct = default);
-
+    Task<Result<ShopBalanceResponse>> GetShopBalanceAsync(Guid shopId, CurrentUser caller, CancellationToken ct = default);
     Task<Result<ShopBalanceResponse>> GetMyBalanceAsync(CurrentUser caller, CancellationToken ct = default);
 
     Task<Result<PagedResult<DebtListItemResponse>>> GetDebtsAsync(DebtQueryRequest request, CancellationToken ct = default);

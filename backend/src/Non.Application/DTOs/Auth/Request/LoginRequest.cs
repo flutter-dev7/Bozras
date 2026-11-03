@@ -11,4 +11,7 @@ public class LoginRequest
     [Required]
     [StringLength(100)]
     public string Password { get; set; } = string.Empty;
+    
+    [StringLength(200)]
+    public string? DeviceName { get; set; }
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:non_app/core/theme/app_colors.dart';
+import 'package:non_app/features/notifications/presentation/widgets/notifications_bell.dart';
+import 'package:non_app/features/orders/domain/entities/order.dart';
 import 'package:non_app/features/orders/presentation/widgets/order_status_filter.dart';
 
 import '../../../../core/constants/app_icons.dart';
@@ -60,55 +63,112 @@ class _OrdersViewState extends ConsumerState<_OrdersView> {
     await ref.read(ordersProvider.future);
   }
 
+  String _groupOf(DateTime date) {
+    final today = Formatters.today();
+    final diff = DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).difference(DateTime(today.year, today.month, today.day)).inDays;
+
+    if (diff == 0) return 'Сегодня';
+    if (diff == 1) return 'Завтра';
+    if (diff > 1) return 'Предстоящие';
+
+    return 'Ранее';
+  }
+
+  List<Object> _groupRows(List<Order> orders) {
+    final rows = <Object>[];
+    String? last;
+
+    for (final order in orders) {
+      final group = _groupOf(order.deliveryDate);
+
+      if (group != last) {
+        rows.add(group);
+        last = group;
+      }
+
+      rows.add(order);
+    }
+
+    return rows;
+  }
+
   @override
   Widget build(BuildContext context) {
     final orders = ref.watch(ordersProvider);
 
     return Scaffold(
-      appBar: const AppTopBar(title: 'Мои заказы', showBack: false),
+      appBar: const AppTopBar(
+        title: 'Мои заказы',
+        showBack: false,
+        actions: [NotificationsBell()],
+      ),
       body: orders.when(
         loading: () => const LoadingView(),
         error: (error, _) => ErrorView(
           message: errorText(error),
           onRetry: () => ref.invalidate(ordersProvider),
         ),
-        data: (state) => RefreshIndicator(
-          onRefresh: _refresh,
-          child: ListView.builder(
-            controller: _scroll,
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            itemCount: state.orders.length + 2,
-            itemBuilder: (context, index) {
-              if (index == 0) return const _Header();
+        data: (state) {
+          final rows = _groupRows(state.orders);
 
-              if (index == state.orders.length + 1) {
-                if (state.orders.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.only(top: 48),
-                    child: EmptyState(
-                      icon: AppIcons.receipt,
-                      title: 'Заказов пока нет',
-                      message: 'Оформите первый заказ на вкладке «Заказать».',
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              controller: _scroll,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              itemCount: rows.length + 2,
+              itemBuilder: (context, index) {
+                if (index == 0) return const _Header();
+
+                if (index == rows.length + 1) {
+                  if (state.orders.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 48),
+                      child: EmptyState(
+                        icon: AppIcons.receipt,
+                        title: 'Заказов пока нет',
+                        message: 'Оформите первый заказ на вкладке «Заказать».',
+                      ),
+                    );
+                  }
+
+                  return state.loadingMore
+                      ? const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : const SizedBox(height: 8);
+                }
+
+                final row = rows[index - 1];
+
+                if (row is String) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 4, bottom: 10),
+                    child: Text(
+                      row,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                        color: AppColors.muted,
+                      ),
                     ),
                   );
                 }
 
-                return state.loadingMore
-                    ? const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    : const SizedBox(height: 8);
-              }
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: OrderCard(order: state.orders[index - 1]),
-              );
-            },
-          ),
-        ),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: OrderCard(order: row as Order),
+                );
+              },
+            ),
+          );
+        },
       ),
     );
   }
@@ -147,7 +207,9 @@ class _Header extends ConsumerWidget {
                         children: [
                           Text(
                             'Ваш долг',
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(

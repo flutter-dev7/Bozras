@@ -20,6 +20,9 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(t => t.TokenHash).IsUnique();
+        builder.Property(t => t.DeviceName).HasMaxLength(200);
+
+        builder.HasIndex(t => t.SessionId);
         builder.HasIndex(t => t.UserId);
     }
 }

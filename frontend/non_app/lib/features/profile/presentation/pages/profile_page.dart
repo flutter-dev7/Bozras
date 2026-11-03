@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:non_app/core/widgets/app_dialogs.dart';
+import 'package:non_app/features/sessions/presentation/pages/sessions_page.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/network/api_exception.dart';
@@ -65,9 +66,17 @@ class ProfilePage extends ConsumerWidget {
           Card(
             child: Column(
               children: [
-                _InfoTile(icon: AppIcons.phone, label: 'Телефон', value: user.phone),
+                _InfoTile(
+                  icon: AppIcons.phone,
+                  label: 'Телефон',
+                  value: user.phone,
+                ),
                 const Divider(indent: 64),
-                _InfoTile(icon: AppIcons.email, label: 'Email', value: user.email ?? '—'),
+                _InfoTile(
+                  icon: AppIcons.email,
+                  label: 'Email',
+                  value: user.email ?? '—',
+                ),
               ],
             ),
           ),
@@ -79,6 +88,16 @@ class ProfilePage extends ConsumerWidget {
                   icon: AppIcons.password,
                   label: 'Сменить пароль',
                   onTap: () => context.push(AppRoutes.changePassword),
+                ),
+                const Divider(indent: 64),
+                _ActionTile(
+                  icon: Icons.smartphone_rounded,
+                  label: 'Мои устройства',
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SessionsPage(),
+                    ),
+                  ),
                 ),
                 const Divider(indent: 64),
                 _ActionTile(
@@ -159,7 +178,10 @@ class _HeaderCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(999),
@@ -183,7 +205,11 @@ class _HeaderCard extends StatelessWidget {
 }
 
 class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.icon, required this.label, required this.value});
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   final IconData icon;
   final String label;

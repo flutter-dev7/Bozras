@@ -94,9 +94,23 @@ public class ShopsController : ApiControllerBase
     }
 
     [HttpGet("{id:guid}/balance")]
-    [Authorize(Roles = RoleNames.AdminOrAgent)]
+    [Authorize(Roles = RoleNames.AdminOrAgent + "," + RoleNames.Courier)]
     public async Task<IActionResult> GetBalance(Guid id, CancellationToken ct)
     {
-        return ToActionResult(await _debtService.GetShopBalanceAsync(id, ct));
+        return ToActionResult(await _debtService.GetShopBalanceAsync(id, Caller, ct));
+    }
+    
+    [HttpPut("{id:guid}/location")]
+    [Authorize(Roles = RoleNames.AdminOrAgent)]
+    public async Task<IActionResult> SetLocation(Guid id, [FromBody] SetLocationRequest request, CancellationToken ct)
+    {
+        return ToActionResult(await _shopService.SetLocationAsync(id, request, ct));
+    }
+
+    [HttpPut("my/location")]
+    [Authorize(Roles = RoleNames.Shop)]
+    public async Task<IActionResult> SetMyLocation([FromBody] SetLocationRequest request, CancellationToken ct)
+    {
+        return ToActionResult(await _shopService.SetMyLocationAsync(CurrentUserId, request, ct));
     }
 }

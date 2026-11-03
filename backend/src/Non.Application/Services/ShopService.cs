@@ -82,12 +82,22 @@ public class ShopService : IShopService
         var phone = PhoneNumberNormalizer.Normalize(request.Phone);
         if (phone is null)
             return Result<ShopResponse>.Failure("Неверный номер телефона.");
+        
+        var locationError = ValidateLocation(request.Latitude, request.Longitude);
+        if (locationError is not null)
+            return Result<ShopResponse>.Failure(locationError);
 
         shop.Name = request.Name.Trim();
         shop.Address = request.Address.Trim();
         shop.Phone = phone;
         shop.ContactName = NormalizeOptional(request.ContactName);
         shop.IsActive = request.IsActive;
+        
+        if (request.Latitude.HasValue && request.Longitude.HasValue)
+        {
+            shop.Latitude = RoundCoordinate(request.Latitude.Value);
+            shop.Longitude = RoundCoordinate(request.Longitude.Value);
+        }
 
         await _unitOfWork.SaveChangesAsync(ct);
 
@@ -148,6 +158,10 @@ public class ShopService : IShopService
         var phone = PhoneNumberNormalizer.Normalize(request.Phone);
         if (phone is null)
             return Result<ShopResponse>.Failure("Неверный номер телефона.");
+        
+        var locationError = ValidateLocation(request.Latitude, request.Longitude);
+        if (locationError is not null)
+            return Result<ShopResponse>.Failure(locationError);
 
         var shop = new Shop
         {
@@ -155,6 +169,8 @@ public class ShopService : IShopService
             Address = request.Address.Trim(),
             Phone = phone,
             ContactName = NormalizeOptional(request.ContactName),
+            Latitude = request.Latitude.HasValue ? RoundCoordinate(request.Latitude.Value) : null,
+            Longitude = request.Longitude.HasValue ? RoundCoordinate(request.Longitude.Value) : null,
             UserId = ownerId,
             IsActive = true
         };
@@ -163,6 +179,26 @@ public class ShopService : IShopService
         await _unitOfWork.SaveChangesAsync(ct);
 
         return await ReloadAsync(shop.Id, ct);
+    }
+    
+    public async Task<Result<ShopResponse>> SetLocationAsync(
+        Guid id, SetLocationRequest request, CancellationToken ct = default)
+    {
+        var shop = await _shopRepository.GetByIdAsync(id, ct);
+        if (shop is null)
+            return Result<ShopResponse>.Failure("Магазин не найден.", ErrorType.NotFound);
+
+        return await ApplyLocationAsync(shop, request, ct);
+    }
+
+    public async Task<Result<ShopResponse>> SetMyLocationAsync(
+        Guid userId, SetLocationRequest request, CancellationToken ct = default)
+    {
+        var shop = await _shopRepository.GetByOwnerIdAsync(userId, ct);
+        if (shop is null)
+            return Result<ShopResponse>.Failure("У вас ещё нет магазина.", ErrorType.NotFound);
+
+        return await ApplyLocationAsync(shop, request, ct);
     }
 
     private async Task<Result<ShopResponse>> ReloadAsync(Guid id, CancellationToken ct)
@@ -174,6 +210,26 @@ public class ShopService : IShopService
 
     private static string? NormalizeOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    
+    private async Task<Result<ShopResponse>> ApplyLocationAsync(
+        Shop shop, SetLocationRequest request, CancellationToken ct)
+    {
+        var error = ValidateLocation(request.Latitude, request.Longitude);
+        if (error is not null)
+            return Result<ShopResponse>.Failure(error);
+
+        shop.Latitude = request.Latitude.HasValue ? RoundCoordinate(request.Latitude.Value) : null;
+        shop.Longitude = request.Longitude.HasValue ? RoundCoordinate(request.Longitude.Value) : null;
+
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return await ReloadAsync(shop.Id, ct);
+    }
+
+    private static string? ValidateLocation(double? latitude, double? longitude) =>
+        latitude.HasValue != longitude.HasValue ? "Укажите и широту, и долготу." : null;
+
+    private static double RoundCoordinate(double value) => Math.Round(value, 6);
 
     private static ShopResponse ToResponse(Shop shop) => new()
     {
@@ -182,6 +238,8 @@ public class ShopService : IShopService
         Address = shop.Address,
         Phone = shop.Phone,
         ContactName = shop.ContactName,
+        Latitude = shop.Latitude,
+        Longitude = shop.Longitude,
         DebtLimit = shop.DebtLimit,
         IsActive = shop.IsActive,
         OwnerUserId = shop.UserId,

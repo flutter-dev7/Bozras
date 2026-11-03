@@ -33,11 +33,18 @@ public class DebtService : IDebtService
         return new ShopBalance(deliveredTotal, paidTotal, pendingDebtTotal);
     }
 
-    public async Task<Result<ShopBalanceResponse>> GetShopBalanceAsync(Guid shopId, CancellationToken ct = default)
+    public async Task<Result<ShopBalanceResponse>> GetShopBalanceAsync(
+        Guid shopId, CurrentUser caller, CancellationToken ct = default)
     {
         var shop = await _shopRepository.GetDetailsByIdAsync(shopId, ct);
         if (shop is null)
             return Result<ShopBalanceResponse>.Failure("Магазин не найден.", ErrorType.NotFound);
+
+        if (caller.Role == UserRole.Courier &&
+            !await _orderRepository.CourierServesShopAsync(caller.Id, shop.Id, ct))
+        {
+            return Result<ShopBalanceResponse>.Failure("Вы не обслуживаете этот магазин.", ErrorType.Forbidden);
+        }
 
         return Result<ShopBalanceResponse>.Success(await BuildBalanceAsync(shop, ct));
     }

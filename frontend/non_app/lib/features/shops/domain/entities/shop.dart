@@ -7,6 +7,8 @@ class Shop {
     required this.contactName,
     required this.debtLimit,
     required this.isActive,
+    this.latitude,
+    this.longitude,
   });
 
   final String id;
@@ -16,4 +18,8 @@ class Shop {
   final String? contactName;
   final double? debtLimit;
   final bool isActive;
+  final double? latitude;
+  final double? longitude;
+
+  bool get hasLocation => latitude != null && longitude != null;
 }

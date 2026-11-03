@@ -27,12 +27,16 @@ class ShopsRepositoryImpl implements ShopsRepository {
     required String address,
     required String phone,
     String? contactName,
+    double? latitude,
+    double? longitude,
   }) {
     return _remote.createMyShop(
       name: name,
       address: address,
       phone: phone,
       contactName: contactName,
+      latitude: latitude,
+      longitude: longitude,
     );
   }
 
@@ -45,7 +49,11 @@ class ShopsRepositoryImpl implements ShopsRepository {
     required int page,
     required int pageSize,
   }) async {
-    final result = await _remote.getShops(search: search, page: page, pageSize: pageSize);
+    final result = await _remote.getShops(
+      search: search,
+      page: page,
+      pageSize: pageSize,
+    );
 
     return PagedResult<Shop>(items: result.items, hasMore: result.hasMore);
   }
@@ -56,12 +64,29 @@ class ShopsRepositoryImpl implements ShopsRepository {
     required String address,
     required String phone,
     String? contactName,
+    double? latitude,
+    double? longitude,
   }) {
     return _remote.createShop(
       name: name,
       address: address,
       phone: phone,
       contactName: contactName,
+      latitude: latitude,
+      longitude: longitude,
+    );
+  }
+
+  @override
+  Future<Shop> setShopLocation(
+    String id, {
+    double? latitude,
+    double? longitude,
+  }) {
+    return _remote.setShopLocation(
+      id,
+      latitude: latitude,
+      longitude: longitude,
     );
   }
 

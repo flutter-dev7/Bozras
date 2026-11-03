@@ -14,6 +14,9 @@ public class Shop : BaseEntity
 
     public decimal? DebtLimit { get; set; }
     public bool IsActive { get; set; } = true;
+    
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 
     public ICollection<Order> Orders { get; set; } = new List<Order>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();

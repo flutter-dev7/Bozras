@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:non_app/features/shops/presentation/widgets/location_field.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/utils/app_snackbar.dart';
@@ -20,12 +22,14 @@ class AddShopPage extends ConsumerStatefulWidget {
   ConsumerState<AddShopPage> createState() => _AddShopPageState();
 }
 
-class _AddShopPageState extends ConsumerState<AddShopPage> with SubmitStateMixin<AddShopPage> {
+class _AddShopPageState extends ConsumerState<AddShopPage>
+    with SubmitStateMixin<AddShopPage> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _address = TextEditingController();
   final _phone = TextEditingController();
   final _contact = TextEditingController();
+  LatLng? _location;
 
   @override
   void dispose() {
@@ -98,7 +102,9 @@ class _AddShopPageState extends ConsumerState<AddShopPage> with SubmitStateMixin
                       prefixText: '+992 ',
                       keyboardType: TextInputType.phone,
                       textInputAction: TextInputAction.next,
-                      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9 ]'))],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9 ]')),
+                      ],
                       validator: Validators.phone,
                       enabled: !loading,
                     ),
@@ -112,6 +118,12 @@ class _AddShopPageState extends ConsumerState<AddShopPage> with SubmitStateMixin
                       onSubmitted: (_) => _submit(),
                       enabled: !loading,
                     ),
+                    const SizedBox(height: 18),
+                    LocationField(
+                      value: _location,
+                      enabled: !loading,
+                      onChanged: (point) => setState(() => _location = point),
+                    ),
                   ],
                 ),
               ),
@@ -120,7 +132,11 @@ class _AddShopPageState extends ConsumerState<AddShopPage> with SubmitStateMixin
                 InlineMessage(message: error!),
               ],
               const SizedBox(height: 24),
-              PrimaryButton(label: 'Добавить магазин', onPressed: _submit, isLoading: loading),
+              PrimaryButton(
+                label: 'Добавить магазин',
+                onPressed: _submit,
+                isLoading: loading,
+              ),
             ],
           ),
         ),

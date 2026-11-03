@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:non_app/core/utils/launcher.dart';
+import 'package:non_app/core/utils/navigation_launcher.dart';
 import 'package:non_app/core/widgets/app_dialogs.dart';
 import 'package:non_app/features/auth/domain/entities/user_role.dart';
 import 'package:non_app/features/auth/presentation/providers/auth_providers.dart';
+import 'package:non_app/features/orders/domain/entities/order_draft.dart';
+import 'package:non_app/features/orders/domain/entities/order_status.dart';
 import 'package:non_app/features/orders/presentation/widgets/courier_action_button.dart';
+import 'package:non_app/features/payments/presentation/widgets/collect_debt_card.dart';
+import 'package:non_app/features/products/presentation/providers/products_providers.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/network/api_exception.dart';
@@ -56,6 +62,46 @@ class OrderDetailsPage extends ConsumerWidget {
     }
   }
 
+  Future<void> _repeat(BuildContext context, WidgetRef ref, Order order) async {
+    try {
+      final products = await ref.read(productsProvider.future);
+      final byId = {for (final p in products) p.id: p};
+
+      final lines = <String, OrderLine>{};
+
+      for (final item in order.items) {
+        final product = byId[item.productId];
+
+        if (product == null) continue;
+
+        lines[product.id] = OrderLine(
+          productId: product.id,
+          name: product.name,
+          unitPrice: product.price,
+          quantity: item.quantity,
+        );
+      }
+
+      if (lines.isEmpty) {
+        if (context.mounted) {
+          AppSnackBar.show(
+            context,
+            'Этих товаров больше нет в каталоге',
+            isError: true,
+          );
+        }
+        return;
+      }
+
+      ref.read(cartProvider.notifier).replaceAll(lines);
+
+      if (context.mounted) context.push(AppRoutes.orderForm);
+    } catch (e) {
+      if (context.mounted)
+        AppSnackBar.show(context, errorText(e), isError: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final order = ref.watch(orderDetailsProvider(orderId));
@@ -83,6 +129,11 @@ class OrderDetailsPage extends ConsumerWidget {
           children: [
             _HeaderCard(order: data),
             const SizedBox(height: 16),
+            if (data.status == OrderStatus.cancelled)
+              const _CancelledBanner()
+            else
+              _TrackerCard(order: data),
+            const SizedBox(height: 16),
             if (!isShop) ...[
               _ShopCard(order: data),
               const SizedBox(height: 16),
@@ -97,6 +148,10 @@ class OrderDetailsPage extends ConsumerWidget {
             if (isCourier && nextCourierStatus(data) != null) ...[
               const SizedBox(height: 20),
               CourierActionButton(order: data),
+            ],
+            if (isCourier) ...[
+              const SizedBox(height: 16),
+              CollectDebtCard(shopId: data.shopId, shopName: data.shopName),
             ],
             if ((isShop || (isAgent && data.source == 'Agent')) &&
                 (data.canEdit || data.canCancel)) ...[
@@ -118,6 +173,14 @@ class OrderDetailsPage extends ConsumerWidget {
                   onPressed: () => _cancel(context, ref, data),
                   child: const Text('Отменить заказ'),
                 ),
+            ],
+            if (isShop) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => _repeat(context, ref, data),
+                icon: const Icon(Icons.replay_rounded, size: 20),
+                label: const Text('Повторить заказ'),
+              ),
             ],
           ],
         ),
@@ -446,9 +509,203 @@ class _ShopCard extends StatelessWidget {
               tooltip: 'Позвонить',
               onPressed: () => callPhone(context, order.shopPhone),
             ),
+            const SizedBox(width: 8),
+            AppIconButton(
+              icon: Icons.directions_rounded,
+              tooltip: 'Маршрут',
+              onPressed: () => openRoute(
+                context,
+                latitude: order.shopLatitude,
+                longitude: order.shopLongitude,
+                address: order.shopAddress,
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CancelledBanner extends StatelessWidget {
+  const _CancelledBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.block, color: AppColors.error),
+          SizedBox(width: 12),
+          Text(
+            'Заказ отменён',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: AppColors.error,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrackerCard extends StatelessWidget {
+  const _TrackerCard({required this.order});
+
+  final Order order;
+
+  static const _steps = [
+    OrderStatus.created,
+    OrderStatus.accepted,
+    OrderStatus.baking,
+    OrderStatus.onTheWay,
+    OrderStatus.delivered,
+  ];
+
+  static const _icons = [
+    Icons.inbox_outlined,
+    Icons.fact_check_outlined,
+    Icons.local_fire_department_outlined,
+    Icons.local_shipping_outlined,
+    Icons.inventory_2_outlined,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final current = _steps.indexOf(order.status);
+    final delivered = order.status == OrderStatus.delivered;
+    final times = {for (final h in order.history) h.status: h.changedAt};
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 18, 8, 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < _steps.length; i++)
+              Expanded(
+                child: _TrackerStep(
+                  icon: _icons[i],
+                  label: _steps[i].label,
+                  time: times[_steps[i]],
+                  done: delivered || i < current,
+                  active: !delivered && i == current,
+                  leftLit: i > 0 && (delivered || i <= current),
+                  rightLit: i < _steps.length - 1 && (delivered || i < current),
+                  isFirst: i == 0,
+                  isLast: i == _steps.length - 1,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrackerStep extends StatelessWidget {
+  const _TrackerStep({
+    required this.icon,
+    required this.label,
+    required this.time,
+    required this.done,
+    required this.active,
+    required this.leftLit,
+    required this.rightLit,
+    required this.isFirst,
+    required this.isLast,
+  });
+
+  final IconData icon;
+  final String label;
+  final DateTime? time;
+  final bool done;
+  final bool active;
+  final bool leftLit;
+  final bool rightLit;
+  final bool isFirst;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    final lit = done || active;
+
+    Widget line(bool on, bool visible) => Expanded(
+      child: Container(
+        height: 3,
+        color: !visible
+            ? Colors.transparent
+            : on
+            ? AppDecor.heroMid
+            : AppColors.border,
+      ),
+    );
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 36,
+          child: Row(
+            children: [
+              line(leftLit, !isFirst),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: done ? AppDecor.heroMid : Colors.white,
+                  border: Border.all(
+                    color: lit ? AppDecor.heroMid : AppColors.border,
+                    width: 2,
+                  ),
+                  boxShadow: active
+                      ? [
+                          BoxShadow(
+                            color: AppDecor.heroMid.withValues(alpha: 0.25),
+                            blurRadius: 0,
+                            spreadRadius: 4,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Icon(
+                  done ? Icons.check : icon,
+                  size: 18,
+                  color: done
+                      ? Colors.white
+                      : active
+                      ? AppDecor.heroMid
+                      : AppColors.muted,
+                ),
+              ),
+              line(rightLit, !isLast),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: lit ? AppColors.brown : AppColors.muted,
+            ),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          time == null ? ' ' : DateFormat('HH:mm').format(time!),
+          style: const TextStyle(fontSize: 11, color: AppColors.muted),
+        ),
+      ],
     );
   }
 }

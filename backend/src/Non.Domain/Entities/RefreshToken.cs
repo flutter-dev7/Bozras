@@ -12,6 +12,9 @@ public class RefreshToken : BaseEntity
 
     public DateTime? RevokedAt { get; set; }
     public Guid? ReplacedByTokenId { get; set; }
+    
+    public Guid SessionId { get; set; }
+    public string? DeviceName { get; set; }
 
     public bool IsActive(DateTime now) => RevokedAt is null && ExpiresAt > now;
 }

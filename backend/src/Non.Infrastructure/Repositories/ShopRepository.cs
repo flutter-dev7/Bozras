@@ -16,6 +16,9 @@ public class ShopRepository : IShopRepository
 
     public Task<Shop?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         _context.Shops.FirstOrDefaultAsync(s => s.Id == id, ct);
+    
+    public Task<Shop?> GetByOwnerIdAsync(Guid userId, CancellationToken ct = default) =>
+        _context.Shops.FirstOrDefaultAsync(s => s.UserId == userId, ct);
 
     public Task<Shop?> GetDetailsByIdAsync(Guid id, CancellationToken ct = default) =>
         _context.Shops

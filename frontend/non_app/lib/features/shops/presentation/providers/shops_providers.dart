@@ -3,6 +3,7 @@ import 'package:non_app/core/models/paged_result.dart';
 import 'package:non_app/features/shops/domain/usecases/create_shop_usecase.dart';
 import 'package:non_app/features/shops/domain/usecases/get_shop_balance_usecase.dart';
 import 'package:non_app/features/shops/domain/usecases/get_shops_usecase.dart';
+import 'package:non_app/features/shops/domain/usecases/set_shop_location_usecase.dart';
 
 import '../../../../core/providers/core_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
@@ -36,17 +37,21 @@ class MyShopNotifier extends AsyncNotifier<Shop?> {
     return ref.read(getMyShopUseCaseProvider)();
   }
 
-  Future<void> create({
+    Future<void> create({
     required String name,
     required String address,
     required String phone,
     String? contactName,
+    double? latitude,
+    double? longitude,
   }) async {
     final shop = await ref.read(createMyShopUseCaseProvider)(
       name: name,
       address: address,
       phone: phone,
       contactName: contactName,
+      latitude: latitude,
+      longitude: longitude,
     );
 
     state = AsyncData<Shop?>(shop);
@@ -63,6 +68,8 @@ final getShopsUseCaseProvider =
     Provider((ref) => GetShopsUseCase(ref.watch(shopsRepositoryProvider)));
 final createShopUseCaseProvider =
     Provider((ref) => CreateShopUseCase(ref.watch(shopsRepositoryProvider)));
+    final setShopLocationUseCaseProvider =
+    Provider((ref) => SetShopLocationUseCase(ref.watch(shopsRepositoryProvider)));
 final getShopBalanceUseCaseProvider =
     Provider((ref) => GetShopBalanceUseCase(ref.watch(shopsRepositoryProvider)));
 

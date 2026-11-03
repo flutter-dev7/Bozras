@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Non.Infrastructure.Migrations
+namespace Non.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -71,6 +71,8 @@ namespace Non.Infrastructure.Migrations
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     RevokedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ReplacedByTokenId = table.Column<Guid>(type: "uuid", nullable: true),
+                    SessionId = table.Column<Guid>(type: "uuid", nullable: false),
+                    DeviceName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -334,6 +336,11 @@ namespace Non.Infrastructure.Migrations
                 name: "IX_Payments_ShopId",
                 table: "Payments",
                 column: "ShopId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_SessionId",
+                table: "RefreshTokens",
+                column: "SessionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_TokenHash",

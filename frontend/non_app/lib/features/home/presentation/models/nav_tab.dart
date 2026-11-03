@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:non_app/features/orders/presentation/pages/agent_orders_page.dart';
 import 'package:non_app/features/orders/presentation/pages/catalog_page.dart';
 import 'package:non_app/features/orders/presentation/pages/courier_history_page.dart';
+import 'package:non_app/features/orders/presentation/pages/courier_map_page.dart';
 import 'package:non_app/features/orders/presentation/pages/courier_today_page.dart';
 import 'package:non_app/features/orders/presentation/pages/orders_page.dart';
 import 'package:non_app/features/shops/presentation/pages/agent_shops_page.dart';
@@ -76,6 +77,12 @@ List<NavTab> tabsFor(UserRole role) {
           icon: PhosphorIconsRegular.truck,
           selectedIcon: PhosphorIconsFill.truck,
           page: CourierTodayPage(),
+        ),
+        NavTab(
+          label: 'Карта',
+          icon: PhosphorIconsRegular.mapTrifold,
+          selectedIcon: PhosphorIconsFill.mapTrifold,
+          page: CourierMapPage(),
         ),
         NavTab(
           label: 'История',

@@ -581,6 +581,8 @@ public class OrderService : IOrderService
         response.ShopName = order.Shop?.Name ?? string.Empty;
         response.ShopAddress = order.Shop?.Address ?? string.Empty;
         response.ShopPhone = order.Shop?.Phone ?? string.Empty;
+        response.ShopLatitude = order.Shop?.Latitude;
+        response.ShopLongitude = order.Shop?.Longitude;
         response.Status = order.Status.ToString();
         response.DeliveryDate = order.DeliveryDate;
         response.PaymentType = order.PaymentType.ToString();

@@ -11,12 +11,16 @@ class CreateMyShopUseCase {
     required String address,
     required String phone,
     String? contactName,
+    double? latitude,
+    double? longitude,
   }) {
     return _repository.createMyShop(
       name: name,
       address: address,
       phone: phone,
       contactName: contactName,
+      latitude: latitude,
+      longitude: longitude,
     );
   }
 }

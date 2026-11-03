@@ -9,6 +9,8 @@ class ShopModel extends Shop {
     required super.contactName,
     required super.debtLimit,
     required super.isActive,
+    super.latitude,
+    super.longitude,
   });
 
   factory ShopModel.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,8 @@ class ShopModel extends Shop {
       contactName: json['contactName'] as String?,
       debtLimit: (json['debtLimit'] as num?)?.toDouble(),
       isActive: json['isActive'] as bool? ?? true,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
     );
   }
 }

@@ -27,7 +27,10 @@ class AuthRemoteDataSource {
     );
   }
 
-  Future<AuthResponseModel> verifyEmail({required String email, required String code}) async {
+  Future<AuthResponseModel> verifyEmail({
+    required String email,
+    required String code,
+  }) async {
     final data = await _client.post(
       '/api/auth/verify-email',
       auth: false,
@@ -38,24 +41,39 @@ class AuthRemoteDataSource {
   }
 
   Future<void> resendVerification(String email) async {
-    await _client.post('/api/auth/resend-verification', auth: false, data: {'email': email});
+    await _client.post(
+      '/api/auth/resend-verification',
+      auth: false,
+      data: {'email': email},
+    );
   }
 
-  Future<AuthResponseModel> login({required String email, required String password}) async {
+  Future<AuthResponseModel> login({
+    required String email,
+    required String password,
+    required String deviceName,
+  }) async {
     final data = await _client.post(
       '/api/auth/login',
       auth: false,
-      data: {'email': email, 'password': password},
+      data: {'email': email, 'password': password, 'deviceName': deviceName},
     );
 
     return AuthResponseModel.fromJson(data as Map<String, dynamic>);
   }
 
   Future<void> forgotPassword(String email) async {
-    await _client.post('/api/auth/forgot-password', auth: false, data: {'email': email});
+    await _client.post(
+      '/api/auth/forgot-password',
+      auth: false,
+      data: {'email': email},
+    );
   }
 
-  Future<String> verifyResetCode({required String email, required String code}) async {
+  Future<String> verifyResetCode({
+    required String email,
+    required String code,
+  }) async {
     final data = await _client.post(
       '/api/auth/verify-reset-code',
       auth: false,
@@ -65,7 +83,10 @@ class AuthRemoteDataSource {
     return (data as Map<String, dynamic>)['resetToken'] as String;
   }
 
-  Future<void> resetPassword({required String resetToken, required String newPassword}) async {
+  Future<void> resetPassword({
+    required String resetToken,
+    required String newPassword,
+  }) async {
     await _client.post(
       '/api/auth/reset-password',
       auth: false,
@@ -76,10 +97,15 @@ class AuthRemoteDataSource {
   Future<AuthResponseModel> changePassword({
     required String currentPassword,
     required String newPassword,
+    required String deviceName,
   }) async {
     final data = await _client.post(
       '/api/auth/change-password',
-      data: {'currentPassword': currentPassword, 'newPassword': newPassword},
+      data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+        'deviceName': deviceName,
+      },
     );
 
     return AuthResponseModel.fromJson(data as Map<String, dynamic>);
@@ -92,7 +118,11 @@ class AuthRemoteDataSource {
   }
 
   Future<void> logout(String refreshToken) async {
-    await _client.post('/api/auth/logout', auth: false, data: {'refreshToken': refreshToken});
+    await _client.post(
+      '/api/auth/logout',
+      auth: false,
+      data: {'refreshToken': refreshToken},
+    );
   }
 
   Future<void> logoutAll() async {
