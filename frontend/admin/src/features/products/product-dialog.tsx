@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ImagePlus, Loader2, Package, RefreshCw, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
 
@@ -10,9 +10,11 @@ import { ApiError } from '@/lib/api'
 import { resolveImageUrl } from '@/lib/image'
 import { cn } from '@/lib/utils'
 
-import { createProduct, updateProduct, uploadProductImage, type Product } from './api'
+import { createProduct, fetchCategories, updateProduct, uploadProductImage, type Product } from './api'
+import { NativeSelect } from '@/components/ui/native-select'
 
 const MAX_BYTES = 5 * 1024 * 1024
+const UNITS = ['шт', 'кг', 'уп.', 'л', 'бут.']
 
 function ImageField({ value, onChange }: { value: string; onChange: (url: string) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -157,6 +159,12 @@ function Form({ product, onClose }: { product: Product | null; onClose: () => vo
   const [price, setPrice] = useState(product ? String(product.price) : '')
   const [imageUrl, setImageUrl] = useState(product?.imageUrl ?? '')
   const [isActive, setIsActive] = useState(product?.isActive ?? true)
+  const [categoryId, setCategoryId] = useState(product?.categoryId ?? '')
+  const [unit, setUnit] = useState(product?.unit ?? 'шт')
+
+  const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: fetchCategories })
+  const categories = categoriesQuery.data ?? []
+  const unitOptions = UNITS.includes(unit) ? UNITS : [...UNITS, unit]
   const [error, setError] = useState<string | null>(null)
 
   const mutation = useMutation({
@@ -165,6 +173,8 @@ function Form({ product, onClose }: { product: Product | null; onClose: () => vo
       weightInGrams: number | null
       price: number
       imageUrl: string | null
+      categoryId: string | null
+      unit: string
     }) => (isEdit ? updateProduct(product.id, { ...input, isActive }) : createProduct(input)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
@@ -195,6 +205,8 @@ function Form({ product, onClose }: { product: Product | null; onClose: () => vo
       weightInGrams: weightNumber,
       price: priceNumber,
       imageUrl: imageUrl.trim() || null,
+      categoryId: categoryId || null,
+      unit,
     })
   }
 
@@ -209,6 +221,38 @@ function Form({ product, onClose }: { product: Product | null; onClose: () => vo
           maxLength={200}
           autoFocus
         />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label className="font-semibold text-stone-700">Категория</Label>
+          <NativeSelect
+            className="w-full rounded-xl"
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+          >
+            <option value="">Без категории</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+        <div className="space-y-2">
+          <Label className="font-semibold text-stone-700">Единица измерения</Label>
+          <NativeSelect
+            className="w-full rounded-xl"
+            value={unit}
+            onChange={(e) => setUnit(e.target.value)}
+          >
+            {unitOptions.map((u) => (
+              <option key={u} value={u}>
+                {u}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -237,6 +281,16 @@ function Form({ product, onClose }: { product: Product | null; onClose: () => vo
         <Label className="font-semibold text-stone-700">Фото</Label>
         <ImageField value={imageUrl} onChange={setImageUrl} />
       </div>
+
+      {isEdit && (
+        <div className="rounded-xl bg-stone-50 px-4 py-3 text-sm text-stone-600">
+          Остаток на складе:{' '}
+          <b className="text-stone-900">
+            {product.stockQuantity} {product.unit}
+          </b>
+          . Меняется через «Приход» и «Списание».
+        </div>
+      )}
 
       {isEdit && (
         <div className="space-y-2">
