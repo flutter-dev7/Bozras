@@ -16,4 +16,10 @@ public class CreateProductRequest
 
     [StringLength(500)]
     public string? ImageUrl { get; set; }
+
+    public Guid? CategoryId { get; set; }
+
+    [Required]
+    [StringLength(20)]
+    public string Unit { get; set; } = "шт";
 }

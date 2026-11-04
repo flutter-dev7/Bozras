@@ -83,6 +83,11 @@ public static class DependencyInjection
         services.AddScoped<IOrderNotifier, OrderNotifier>();
         services.AddScoped<IDeviceService, DeviceService>();
         
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IStockRepository, StockRepository>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IStockService, StockService>();
+        
         return services;
     }
 }

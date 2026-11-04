@@ -9,4 +9,10 @@ public class Product : BaseEntity
     public decimal Price { get; set; }
     public string? ImageUrl { get; set; }
     public bool IsActive { get; set; } = true;
+
+    public string Unit { get; set; } = "шт";
+    public int StockQuantity { get; set; }
+
+    public Guid? CategoryId { get; set; }
+    public Category? Category { get; set; }
 }

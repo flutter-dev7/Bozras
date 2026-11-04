@@ -13,15 +13,18 @@ public class ProductService : IProductService
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(30);
 
     private readonly IProductRepository _productRepository;
+    private readonly ICategoryRepository _categoryRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICacheService _cacheService;
 
     public ProductService(
         IProductRepository productRepository,
+        ICategoryRepository categoryRepository,
         IUnitOfWork unitOfWork,
         ICacheService cacheService)
     {
         _productRepository = productRepository;
+        _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
         _cacheService = cacheService;
     }
@@ -43,7 +46,7 @@ public class ProductService : IProductService
         var pageSize = Math.Clamp(request.PageSize, 1, 100);
 
         var (items, totalCount) = await _productRepository.GetPagedAsync(
-            request.Search, request.IsActive, page, pageSize, ct);
+            request.Search, request.IsActive, request.CategoryId, page, pageSize, ct);
 
         var result = new PagedResult<ProductResponse>
         {
@@ -81,12 +84,23 @@ public class ProductService : IProductService
         if (await _productRepository.ExistsByNameAsync(name, null, ct))
             return Result<ProductResponse>.Failure("Продукт с таким названием уже существует.", ErrorType.Conflict);
 
+        Category? category = null;
+        if (request.CategoryId.HasValue)
+        {
+            category = await _categoryRepository.GetByIdAsync(request.CategoryId.Value, ct);
+            if (category is null)
+                return Result<ProductResponse>.Failure("Категория не найдена.", ErrorType.NotFound);
+        }
+
         var product = new Product
         {
             Name = name,
             WeightInGrams = request.WeightInGrams,
             Price = request.Price,
             ImageUrl = request.ImageUrl,
+            Unit = request.Unit.Trim(),
+            CategoryId = category?.Id,
+            Category = category,
             IsActive = true
         };
 
@@ -110,10 +124,21 @@ public class ProductService : IProductService
         if (await _productRepository.ExistsByNameAsync(name, id, ct))
             return Result<ProductResponse>.Failure("Продукт с таким названием уже существует.", ErrorType.Conflict);
 
+        Category? category = null;
+        if (request.CategoryId.HasValue)
+        {
+            category = await _categoryRepository.GetByIdAsync(request.CategoryId.Value, ct);
+            if (category is null)
+                return Result<ProductResponse>.Failure("Категория не найдена.", ErrorType.NotFound);
+        }
+
         product.Name = name;
         product.WeightInGrams = request.WeightInGrams;
         product.Price = request.Price;
         product.ImageUrl = request.ImageUrl;
+        product.Unit = request.Unit.Trim();
+        product.CategoryId = category?.Id;
+        product.Category = category;
         product.IsActive = request.IsActive;
 
         await _unitOfWork.SaveChangesAsync(ct);
@@ -131,6 +156,10 @@ public class ProductService : IProductService
         WeightInGrams = product.WeightInGrams,
         Price = product.Price,
         ImageUrl = product.ImageUrl,
-        IsActive = product.IsActive
+        IsActive = product.IsActive,
+        CategoryId = product.CategoryId,
+        CategoryName = product.Category?.Name,
+        Unit = product.Unit,
+        StockQuantity = product.StockQuantity
     };
 }

@@ -26,6 +26,7 @@ public class OrderService : IOrderService
     private readonly ICacheService _cacheService;
     private readonly IOrderNotifier _notifier;
     private readonly TimeProvider _timeProvider;
+    private readonly IStockService _stockService;
 
     public OrderService(
         IOrderRepository orderRepository,
@@ -38,7 +39,8 @@ public class OrderService : IOrderService
         IUnitOfWork unitOfWork,
         ICacheService cacheService,
         IOrderNotifier notifier,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        IStockService stockService)
     {
         _orderRepository = orderRepository;
         _shopRepository = shopRepository;
@@ -51,6 +53,7 @@ public class OrderService : IOrderService
         _cacheService = cacheService;
         _notifier = notifier;
         _timeProvider = timeProvider;
+        _stockService = stockService;
     }
 
     public async Task<Result<PagedResult<OrderResponse>>> GetPagedAsync(
@@ -175,10 +178,17 @@ public class OrderService : IOrderService
         }
 
         order.RecordStatus(caller.Id);
+        
+        var reserve = await _stockService.ApplyOrderChangeAsync(
+            requested.Select(r => (r.Key, -r.Value)), order.Id, caller.Id, ct);
+
+        if (reserve.IsFailure)
+            return Result<OrderDetailsResponse>.Failure(reserve.Error!, reserve.ErrorType!.Value);
 
         await _orderRepository.AddAsync(order, ct);
         await _unitOfWork.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
+        await _stockService.InvalidateCacheAsync(requested.Keys);
 
         return await ReloadAndNotifyAsync(order.Id, OrderEvent.Created, caller, ct);
     }
@@ -249,6 +259,21 @@ public class OrderService : IOrderService
                 }
             }
         }
+        
+        var before = order.Items
+            .GroupBy(i => i.ProductId)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.Quantity));
+
+        var changes = requested.Keys
+            .Union(before.Keys)
+            .Select(productId => (
+                ProductId: productId,
+                StockDelta: before.GetValueOrDefault(productId) - requested.GetValueOrDefault(productId)))
+            .ToList();
+
+        var stockResult = await _stockService.ApplyOrderChangeAsync(changes, order.Id, caller.Id, ct);
+        if (stockResult.IsFailure)
+            return Result<OrderDetailsResponse>.Failure(stockResult.Error!, stockResult.ErrorType!.Value);
 
         order.DeliveryDate = request.DeliveryDate;
         order.PaymentType = request.PaymentType;
@@ -265,6 +290,7 @@ public class OrderService : IOrderService
 
         await _unitOfWork.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
+        await _stockService.InvalidateCacheAsync(changes.Select(c => c.ProductId));
 
         return await ReloadAndNotifyAsync(order.Id, OrderEvent.Updated, caller, ct);
     }
@@ -329,7 +355,7 @@ public class OrderService : IOrderService
     public async Task<Result<OrderDetailsResponse>> CancelAsync(
         Guid id, CurrentUser caller, CancellationToken ct = default)
     {
-        var order = await _orderRepository.GetByIdAsync(id, ct);
+        var order = await _orderRepository.GetWithItemsForUpdateAsync(id, ct);
         if (order is null)
             return Result<OrderDetailsResponse>.Failure("Заказ не найден.", ErrorType.NotFound);
 
@@ -340,6 +366,10 @@ public class OrderService : IOrderService
         if (windowError is not null)
             return Result<OrderDetailsResponse>.Failure(windowError);
 
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(ct);
+        await _shopRepository.LockForUpdateAsync(order.ShopId, ct);
+        await _orderRepository.ReloadAsync(order, ct);
+
         try
         {
             order.Cancel(caller.Id);
@@ -349,7 +379,16 @@ public class OrderService : IOrderService
             return Result<OrderDetailsResponse>.Failure(ex.Message);
         }
 
+        var release = await _stockService.ApplyOrderChangeAsync(
+            order.Items.Select(i => (i.ProductId, i.Quantity)), order.Id, caller.Id, ct);
+
+        if (release.IsFailure)
+            return Result<OrderDetailsResponse>.Failure(release.Error!, release.ErrorType!.Value);
+
         await _unitOfWork.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
+
+        await _stockService.InvalidateCacheAsync(order.Items.Select(i => i.ProductId));
 
         return await ReloadAndNotifyAsync(order.Id, OrderEvent.Cancelled, caller, ct);
     }

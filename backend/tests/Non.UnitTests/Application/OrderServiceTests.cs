@@ -14,6 +14,7 @@ namespace Non.UnitTests.Application;
 public class OrderServiceTests
 {
     private static readonly DateOnly DeliveryDate = new(2026, 10, 30);
+    private static readonly DateOnly Today = new(2026, 10, 24);
 
     private readonly Mock<IOrderRepository> _orders = new();
     private readonly Mock<IShopRepository> _shops = new();
@@ -26,6 +27,7 @@ public class OrderServiceTests
     private readonly Mock<IUnitOfWorkTransaction> _transaction = new();
     private readonly Mock<ICacheService> _cache = new();
     private readonly Mock<IOrderNotifier> _notifier = new();
+    private readonly Mock<IStockService> _stock = new();
 
     private readonly Shop _shop = new() { Name = "Саодат", IsActive = true };
     private readonly Product _product = new() { Name = "Нони тандури", Price = 5m, IsActive = true };
@@ -62,13 +64,22 @@ public class OrderServiceTests
             .Setup(p => p.AddAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
             .Callback<Payment, CancellationToken>((p, _) => _savedPayment = p)
             .Returns(Task.CompletedTask);
+        
+        _stock
+            .Setup(s => s.ApplyOrderChangeAsync(
+                It.IsAny<IEnumerable<(Guid ProductId, int StockDelta)>>(),
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<bool>.Success(true));
 
-        var now = new DateTimeOffset(2026, 10, 24, 5, 0, 0, TimeSpan.Zero);
-
+        var now = new DateTimeOffset(2026, 10, 24, 17, 0, 0, TimeSpan.Zero);
+        
         _service = new OrderService(
             _orders.Object, _shops.Object, _products.Object, _users.Object, _settings.Object,
             _payments.Object, _debts.Object, _unitOfWork.Object, _cache.Object, _notifier.Object,
-            new FixedTimeProvider(now));
+            new FixedTimeProvider(now),
+            _stock.Object);
     }
 
     private void SetBalance(decimal delivered, decimal paid, decimal pending = 0m) =>
@@ -79,7 +90,7 @@ public class OrderServiceTests
     private CreateOrderRequest CreateRequest(PaymentType paymentType, int quantity) => new()
     {
         ShopId = _shop.Id,
-        DeliveryDate = DeliveryDate,
+        DeliveryDate = Today,
         PaymentType = paymentType,
         Items = new List<CreateOrderItemRequest>
         {
@@ -189,6 +200,38 @@ public class OrderServiceTests
         var result = await _service.CreateAsync(CreateRequest(PaymentType.Now, 10), Caller(UserRole.Admin));
 
         Assert.True(result.IsFailure);
+    }
+    
+    [Fact]
+    public async Task Create_NotEnoughStock_IsRejectedAndNotSaved()
+    {
+        _stock
+            .Setup(s => s.ApplyOrderChangeAsync(
+                It.IsAny<IEnumerable<(Guid ProductId, int StockDelta)>>(),
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<bool>.Failure("Недостаточно товара «Нони тандури»: осталось 3 шт."));
+
+        var result = await _service.CreateAsync(CreateRequest(PaymentType.Now, 10), Caller(UserRole.Agent));
+
+        Assert.True(result.IsFailure);
+        _orders.Verify(o => o.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
+        _transaction.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_ReservesRequestedQuantityFromStock()
+    {
+        var result = await _service.CreateAsync(CreateRequest(PaymentType.Now, 10), Caller(UserRole.Agent));
+
+        Assert.True(result.IsSuccess);
+        _stock.Verify(s => s.ApplyOrderChangeAsync(
+            It.Is<IEnumerable<(Guid ProductId, int StockDelta)>>(c =>
+                c.Single().ProductId == _product.Id && c.Single().StockDelta == -10),
+            It.IsAny<Guid>(),
+            It.IsAny<Guid>(),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private Order OnTheWayOrder(Guid courierId, PaymentType paymentType, int quantity = 20)
