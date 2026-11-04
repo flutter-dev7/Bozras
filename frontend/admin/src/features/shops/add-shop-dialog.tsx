@@ -11,6 +11,7 @@ import { toApiPhone } from '@/lib/format'
 
 import { createShop } from './api'
 import { AppDialog } from '@/components/app-dialog'
+import { LocationPicker, type GeoPoint } from '@/components/location-picker'
 
 function Form({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient()
@@ -18,6 +19,7 @@ function Form({ onClose }: { onClose: () => void }) {
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
   const [contact, setContact] = useState('')
+  const [point, setPoint] = useState<GeoPoint | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const mutation = useMutation({
@@ -27,6 +29,8 @@ function Form({ onClose }: { onClose: () => void }) {
         address: address.trim(),
         phone: toApiPhone(phone),
         contactName: contact.trim() || undefined,
+        latitude: point?.lat,
+        longitude: point?.lng,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shops'] })
@@ -72,6 +76,11 @@ function Form({ onClose }: { onClose: () => void }) {
       <div className="space-y-2">
         <Label>Контактное лицо (необязательно)</Label>
         <Input value={contact} onChange={(e) => setContact(e.target.value)} className="h-11" />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Расположение на карте (необязательно)</Label>
+        <LocationPicker value={point} onChange={setPoint} />
       </div>
 
       {error && (

@@ -7,6 +7,8 @@ export type Shop = {
   address: string
   phone: string
   contactName: string | null
+  latitude: number | null
+  longitude: number | null
   debtLimit: number | null
   isActive: boolean
   ownerUserId: string | null
@@ -45,6 +47,8 @@ export type NewShopInput = {
   address: string
   phone: string
   contactName?: string
+  latitude?: number
+  longitude?: number
 }
 
 /** Короткий список для выбора магазина. */
@@ -94,6 +98,14 @@ export function setShopOwner(id: string, ownerPhone: string) {
     method: 'PUT',
     url: `/api/Shops/${id}/owner`,
     data: { ownerPhone },
+  })
+}
+
+export function setShopLocation(id: string, latitude: number | null, longitude: number | null) {
+  return request<Shop>({
+    method: 'PUT',
+    url: `/api/Shops/${id}/location`,
+    data: { latitude, longitude },
   })
 }
 

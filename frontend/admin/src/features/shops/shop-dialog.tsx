@@ -12,8 +12,9 @@ import { ApiError } from '@/lib/api'
 import { formatDate, formatDateTime, money, toApiPhone } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
-import { fetchShop, fetchShopBalance, setDebtLimit, setShopOwner, updateShop } from './api'
+import { fetchShop, fetchShopBalance, setDebtLimit, setShopLocation, setShopOwner, updateShop } from './api'
 import { AppDialog } from '@/components/app-dialog'
+import { LocationPicker, type GeoPoint } from '@/components/location-picker'
 
 const methodLabels: Record<PaymentMethod, string> = {
     Cash: 'Наличные',
@@ -65,6 +66,7 @@ function ShopBody({ id }: { id: string }) {
     const [reversing, setReversing] = useState<{ id: string; reason: string } | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [notice, setNotice] = useState<string | null>(null)
+    const [location, setLocation] = useState<GeoPoint | null | undefined>(undefined)
 
     const [edit, setEdit] = useState<{
         name: string
@@ -117,6 +119,16 @@ function ShopBody({ id }: { id: string }) {
         onSuccess: () => {
             setOwnerInput('')
             done('Владелец привязан')
+        },
+        onError: fail,
+    })
+
+    const locationMutation = useMutation({
+        mutationFn: (point: GeoPoint | null) =>
+            setShopLocation(id, point?.lat ?? null, point?.lng ?? null),
+        onSuccess: () => {
+            setLocation(undefined)
+            done('Расположение сохранено')
         },
         onError: fail,
     })
@@ -174,6 +186,12 @@ function ShopBody({ id }: { id: string }) {
     const payValid = Number.isFinite(payNumber) && payNumber > 0
     const overLimit = balance.debtLimit !== null && balance.debt > balance.debtLimit
     const payments = paymentsQuery.data?.items ?? []
+
+    const savedPoint: GeoPoint | null =
+        shop.latitude !== null && shop.longitude !== null
+            ? { lat: shop.latitude, lng: shop.longitude }
+            : null
+    const shownPoint = location === undefined ? savedPoint : location
 
     const form = edit ?? {
         name: shop.name,
@@ -352,6 +370,34 @@ function ShopBody({ id }: { id: string }) {
                 </div>
             </Section>
 
+            <Section title="Расположение на карте">
+                <LocationPicker value={shownPoint} onChange={setLocation} />
+
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <Button
+                        className="h-10 font-bold"
+                        disabled={location === undefined || locationMutation.isPending}
+                        onClick={() => locationMutation.mutate(location ?? null)}
+                    >
+                        {locationMutation.isPending && <Loader2 className="size-4 animate-spin" />}
+                        Сохранить точку
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="h-10"
+                        disabled={shownPoint === null || locationMutation.isPending}
+                        onClick={() => setLocation(null)}
+                    >
+                        Убрать точку
+                    </Button>
+                    {location !== undefined && (
+                        <Button variant="ghost" className="h-10" onClick={() => setLocation(undefined)}>
+                            Сбросить
+                        </Button>
+                    )}
+                </div>
+            </Section>
+
             <div className="grid gap-5 sm:grid-cols-2">
                 <Section title="Лимит долга">
                     <div className="flex gap-2">
@@ -514,24 +560,24 @@ function ShopBody({ id }: { id: string }) {
 }
 
 export function ShopDialog({
-  shopId,
-  shopName,
-  onClose,
+    shopId,
+    shopName,
+    onClose,
 }: {
-  shopId: string | null
-  shopName: string
-  onClose: () => void
+    shopId: string | null
+    shopName: string
+    onClose: () => void
 }) {
-  return (
-    <AppDialog
-      open={shopId !== null}
-      onClose={onClose}
-      icon={Store}
-      title={shopName}
-      subtitle="Карточка магазина"
-      wide
-    >
-      {shopId && <ShopBody key={shopId} id={shopId} />}
-    </AppDialog>
-  )
+    return (
+        <AppDialog
+            open={shopId !== null}
+            onClose={onClose}
+            icon={Store}
+            title={shopName}
+            subtitle="Карточка магазина"
+            wide
+        >
+            {shopId && <ShopBody key={shopId} id={shopId} />}
+        </AppDialog>
+    )
 }
