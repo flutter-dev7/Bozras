@@ -30,11 +30,12 @@ class AuthRemoteDataSource {
   Future<AuthResponseModel> verifyEmail({
     required String email,
     required String code,
+    required String deviceName,
   }) async {
     final data = await _client.post(
       '/api/auth/verify-email',
       auth: false,
-      data: {'email': email, 'code': code},
+      data: {'email': email, 'code': code, 'deviceName': deviceName},
     );
 
     return AuthResponseModel.fromJson(data as Map<String, dynamic>);

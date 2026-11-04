@@ -11,4 +11,6 @@ public class ChangePasswordRequest
     [Required]
     [StringLength(100, MinimumLength = 8)]
     public string NewPassword { get; set; } = string.Empty;
+    [StringLength(200)]
+    public string? DeviceName { get; set; }
 }

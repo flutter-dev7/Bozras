@@ -12,6 +12,7 @@ import { ShopsPage } from '@/features/shops/shops-page'
 import { UsersPage } from '@/features/users/users-page'
 import { NotFoundPage } from '@/pages/not-found-page'
 import { PlanPage } from './features/products/plan-page'
+import { ShopPage } from './features/shops/shop-page'
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="orders/:id" element={<OrderPage />} />
             <Route path="plan" element={<PlanPage />} />
             <Route path="shops" element={<ShopsPage />} />
+            <Route path="shops/:id" element={<ShopPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="settings" element={<SettingsPage />} />

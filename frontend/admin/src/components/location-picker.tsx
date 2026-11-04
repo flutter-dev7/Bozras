@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 
 import { Button } from '@/components/ui/button'
+import { cn } from 'cn'
 
 export type GeoPoint = { lat: number; lng: number }
 
@@ -45,9 +46,11 @@ function ResizeFix() {
 export function LocationPicker({
   value,
   onChange,
+  className,
 }: {
   value: GeoPoint | null
   onChange: (point: GeoPoint) => void
+  className?: string
 }) {
   const [map, setMap] = useState<L.Map | null>(null)
   const [geoError, setGeoError] = useState<string | null>(null)
@@ -81,7 +84,7 @@ export function LocationPicker({
           center={[center.lat, center.lng]}
           zoom={value ? 17 : 12}
           scrollWheelZoom
-          className="h-64 w-full"
+          className={cn('h-64 w-full', className)}
         >
           <TileLayer
             url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"

@@ -12,15 +12,14 @@ import { cn } from '@/lib/utils'
 
 import { AddShopDialog } from './add-shop-dialog'
 import { fetchShopsPage } from './api'
-import { ShopDialog } from './shop-dialog'
-
+import { useNavigate } from 'react-router-dom'
 const PAGE_SIZE = 20
 
 export function ShopsTab() {
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState<'active' | 'inactive' | 'all'>('active')
   const [page, setPage] = useState(1)
-  const [openShop, setOpenShop] = useState<{ id: string; name: string } | null>(null)
+  const navigate = useNavigate()
   const [adding, setAdding] = useState(false)
 
   const debounced = useDebounced(search.trim())
@@ -106,7 +105,7 @@ export function ShopsTab() {
                   shops.map((shop) => (
                     <tr
                       key={shop.id}
-                      onClick={() => setOpenShop({ id: shop.id, name: shop.name })}
+                      onClick={() => navigate(`/shops/${shop.id}`)}
                       className="group cursor-pointer border-b border-stone-100 transition-colors last:border-0 hover:bg-amber-50/50"
                     >
                       <td className="px-5 py-4">
@@ -195,12 +194,6 @@ export function ShopsTab() {
           </div>
         </div>
       )}
-
-      <ShopDialog
-        shopId={openShop?.id ?? null}
-        shopName={openShop?.name ?? ''}
-        onClose={() => setOpenShop(null)}
-      />
       <AddShopDialog open={adding} onClose={() => setAdding(false)} />
     </div>
   )

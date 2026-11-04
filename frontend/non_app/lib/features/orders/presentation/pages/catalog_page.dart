@@ -9,6 +9,7 @@ import '../../../../core/constants/app_icons.dart';
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decor.dart';
+import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/utils/error_text.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_top_bar.dart';
@@ -31,6 +32,31 @@ class CatalogPage extends StatelessWidget {
   }
 }
 
+List<Object> _catalogRows(List<Product> list) {
+  final groups = <String?, List<Product>>{};
+
+  for (final product in list) {
+    groups.putIfAbsent(product.categoryName, () => []).add(product);
+  }
+
+  final names = groups.keys.toList()
+    ..sort((a, b) {
+      if (a == null) return 1;
+      if (b == null) return -1;
+
+      return a.compareTo(b);
+    });
+
+  final showHeaders = names.length > 1 || names.first != null;
+
+  return [
+    for (final name in names) ...[
+      if (showHeaders) name ?? 'Другое',
+      ...groups[name]!,
+    ],
+  ];
+}
+
 class _CatalogView extends ConsumerWidget {
   const _CatalogView();
 
@@ -51,35 +77,66 @@ class _CatalogView extends ConsumerWidget {
           message: errorText(error),
           onRetry: () => ref.invalidate(productsProvider),
         ),
-        data: (list) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(productsProvider);
-            await ref.read(productsProvider.future);
-          },
-          child: list.isEmpty
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: const [
-                    SizedBox(height: 80),
-                    EmptyState(
-                      icon: AppIcons.store,
-                      title: 'Пока нет товаров',
-                      message: 'Потяните вниз, чтобы обновить.',
-                    ),
-                  ],
-                )
-              : ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                  itemCount: list.length + 1,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) => index == 0
-                      ? const CutoffBanner()
-                      : _ProductTile(product: list[index - 1]),
-                ),
-        ),
+        data: (list) {
+          final rows = _catalogRows(list);
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(productsProvider);
+              await ref.read(productsProvider.future);
+            },
+            child: list.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: const [
+                      SizedBox(height: 80),
+                      EmptyState(
+                        icon: AppIcons.store,
+                        title: 'Пока нет товаров',
+                        message: 'Потяните вниз, чтобы обновить.',
+                      ),
+                    ],
+                  )
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                    itemCount: rows.length + 1,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      if (index == 0) return const CutoffBanner();
+
+                      final row = rows[index - 1];
+
+                      return row is Product
+                          ? _ProductTile(product: row)
+                          : _CategoryHeader(title: row as String);
+                    },
+                  ),
+          );
+        },
       ),
       bottomNavigationBar: cart.isEmpty ? null : _CartBar(cart: cart),
+    );
+  }
+}
+
+class _CategoryHeader extends StatelessWidget {
+  const _CategoryHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: 18,
+          color: AppColors.brown,
+        ),
+      ),
     );
   }
 }
@@ -96,6 +153,17 @@ class _ProductTile extends ConsumerWidget {
     );
 
     void change(int value) {
+      var next = value;
+
+      if (next > product.stockQuantity) {
+        AppSnackBar.show(
+          context,
+          'Доступно только ${product.stockQuantity} ${product.unit}',
+          isError: true,
+        );
+        next = product.stockQuantity;
+      }
+
       ref
           .read(cartProvider.notifier)
           .setLine(
@@ -103,7 +171,7 @@ class _ProductTile extends ConsumerWidget {
               productId: product.id,
               name: product.name,
               unitPrice: product.price,
-              quantity: value,
+              quantity: next,
             ),
           );
     }
@@ -138,6 +206,27 @@ class _ProductTile extends ConsumerWidget {
                           ),
                         ),
                       ],
+                      if (!product.inStock) ...[
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Нет в наличии',
+                          style: TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ] else if (product.isLowStock) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Осталось ${product.stockQuantity} ${product.unit}',
+                          style: TextStyle(
+                            color: Colors.orange.shade800,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -153,25 +242,46 @@ class _ProductTile extends ConsumerWidget {
                     fontSize: 17,
                   ),
                 ),
+                Text(
+                  ' / ${product.unit}',
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const Spacer(),
                 if (quantity == 0)
-                  Material(
-                    color: AppDecor.heroMid,
-                    borderRadius: BorderRadius.circular(14),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () => change(1),
-                      child: const SizedBox(
-                        width: 112,
-                        height: 36,
-                        child: Icon(
-                          AppIcons.plus,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  )
+                  product.inStock
+                      ? Material(
+                          color: AppDecor.heroMid,
+                          borderRadius: BorderRadius.circular(14),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () => change(1),
+                            child: const SizedBox(
+                              width: 112,
+                              height: 36,
+                              child: Icon(
+                                AppIcons.plus,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Container(
+                          width: 112,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: AppColors.border,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            AppIcons.plus,
+                            size: 18,
+                            color: AppColors.muted,
+                          ),
+                        )
                 else
                   QuantityStepper(value: quantity, onChanged: change),
               ],
@@ -244,7 +354,7 @@ class _CartBar extends StatelessWidget {
                 const Icon(AppIcons.cart, color: Colors.white),
                 const SizedBox(width: 12),
                 Text(
-                  '${cart.totalQuantity} шт.',
+                  'Позиций: ${cart.length}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,

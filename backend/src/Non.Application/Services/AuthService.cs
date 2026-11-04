@@ -130,8 +130,7 @@ public class AuthService : IAuthService
 
         user.EmailConfirmed = true;
 
-        return Result<AuthResponse>.Success(await IssueTokensAsync(user, null, ct));
-        
+        return Result<AuthResponse>.Success(await IssueTokensAsync(user, request.DeviceName, ct));        
     }
 
     public async Task<Result> ResendVerificationAsync(EmailRequest request, CancellationToken ct = default)
@@ -295,8 +294,7 @@ public class AuthService : IAuthService
 
         await RevokeAllAsync(user.Id, _timeProvider.GetUtcNow().UtcDateTime, ct);
 
-        return Result<AuthResponse>.Success(await IssueTokensAsync(user, null, ct));
-    }
+        return Result<AuthResponse>.Success(await IssueTokensAsync(user, request.DeviceName, ct));    }
 
     public async Task<Result<AuthResponse>> RefreshAsync(RefreshTokenRequest request, CancellationToken ct = default)
     {

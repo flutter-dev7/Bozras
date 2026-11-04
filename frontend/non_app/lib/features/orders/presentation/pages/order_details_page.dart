@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,6 +53,7 @@ class OrderDetailsPage extends ConsumerWidget {
       ref.invalidate(orderDetailsProvider(order.id));
       ref.invalidate(ordersProvider);
       ref.invalidate(myBalanceProvider);
+      ref.invalidate(productsProvider);
 
       if (context.mounted) {
         AppSnackBar.show(context, 'Заказ отменён');
@@ -64,21 +67,31 @@ class OrderDetailsPage extends ConsumerWidget {
 
   Future<void> _repeat(BuildContext context, WidgetRef ref, Order order) async {
     try {
+      ref.invalidate(productsProvider);
+
       final products = await ref.read(productsProvider.future);
       final byId = {for (final p in products) p.id: p};
 
       final lines = <String, OrderLine>{};
+      var adjusted = false;
 
       for (final item in order.items) {
         final product = byId[item.productId];
 
-        if (product == null) continue;
+        if (product == null || !product.inStock) {
+          adjusted = true;
+          continue;
+        }
+
+        final quantity = min(item.quantity, product.stockQuantity);
+
+        if (quantity < item.quantity) adjusted = true;
 
         lines[product.id] = OrderLine(
           productId: product.id,
           name: product.name,
           unitPrice: product.price,
-          quantity: item.quantity,
+          quantity: quantity,
         );
       }
 
@@ -86,7 +99,7 @@ class OrderDetailsPage extends ConsumerWidget {
         if (context.mounted) {
           AppSnackBar.show(
             context,
-            'Этих товаров больше нет в каталоге',
+            'Этих товаров сейчас нет в наличии',
             isError: true,
           );
         }
@@ -95,10 +108,18 @@ class OrderDetailsPage extends ConsumerWidget {
 
       ref.read(cartProvider.notifier).replaceAll(lines);
 
+      if (adjusted && context.mounted) {
+        AppSnackBar.show(
+          context,
+          'Часть товаров недоступна или количество уменьшено по остатку',
+        );
+      }
+
       if (context.mounted) context.push(AppRoutes.orderForm);
     } catch (e) {
-      if (context.mounted)
+      if (context.mounted) {
         AppSnackBar.show(context, errorText(e), isError: true);
+      }
     }
   }
 

@@ -11,4 +11,6 @@ public class VerifyEmailRequest
     [Required]
     [RegularExpression(@"^\d{6}$", ErrorMessage = "Код должен состоять из 6 цифр.")]
     public string Code { get; set; } = string.Empty;
+    [StringLength(200)]
+    public string? DeviceName { get; set; }
 }

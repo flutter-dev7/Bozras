@@ -167,6 +167,7 @@ class _OrderFormPageState extends ConsumerState<OrderFormPage>
       }
 
       ref.invalidate(ordersProvider);
+      ref.invalidate(productsProvider);
       ref.invalidate(myBalanceProvider);
 
       if (!mounted) return;
@@ -435,16 +436,25 @@ class _ProductPicker extends ConsumerWidget {
             separatorBuilder: (_, __) => const Divider(),
             itemBuilder: (context, index) {
               final product = list[index];
+              final available = product.inStock;
 
               return ListTile(
+                enabled: available,
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   product.name,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: Text(Formatters.money(product.price)),
-                trailing: const Icon(AppIcons.plus, color: AppDecor.heroMid),
-                onTap: () => Navigator.of(context).pop(product),
+                subtitle: Text(
+                  available
+                      ? '${Formatters.money(product.price)} · на складе ${product.stockQuantity} ${product.unit}'
+                      : 'Нет в наличии',
+                ),
+                trailing: Icon(
+                  AppIcons.plus,
+                  color: available ? AppDecor.heroMid : AppColors.muted,
+                ),
+                onTap: available ? () => Navigator.of(context).pop(product) : null,
               );
             },
           ),
@@ -453,7 +463,6 @@ class _ProductPicker extends ConsumerWidget {
     );
   }
 }
-
 
 class _ShopBanner extends StatelessWidget {
   const _ShopBanner({required this.shop});

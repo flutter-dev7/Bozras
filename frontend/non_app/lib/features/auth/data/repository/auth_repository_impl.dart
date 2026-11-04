@@ -93,7 +93,13 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String code,
   }) async {
-    return _saveSession(await _remote.verifyEmail(email: email, code: code));
+    final response = await _remote.verifyEmail(
+      email: email,
+      code: code,
+      deviceName: await DeviceName.read(),
+    );
+
+    return _saveSession(response);
   }
 
   @override
