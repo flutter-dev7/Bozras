@@ -1,0 +1,74 @@
+using FirebaseAdmin;
+using FirebaseAdmin.Messaging;
+using Google.Apis.Auth.OAuth2;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Bozras.Application.Common;
+using Bozras.Application.Interfaces.Services;
+
+namespace Bozras.Infrastructure.Notifications;
+
+public sealed class FcmPushSender : IPushSender
+{
+    private readonly FirebaseMessaging _messaging;
+    private readonly ILogger<FcmPushSender> _logger;
+
+    public FcmPushSender(IConfiguration configuration, IHostEnvironment environment, ILogger<FcmPushSender> logger)
+    {
+        _logger = logger;
+
+        var json = configuration["Firebase:CredentialsJson"];
+        var path = configuration["Firebase:CredentialsPath"];
+
+        GoogleCredential credential;
+
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            credential = GoogleCredential.FromJson(json);
+        }
+        else
+        {
+            var fullPath = Path.IsPathRooted(path!)
+                ? path!
+                : Path.Combine(environment.ContentRootPath, path!);
+
+            credential = GoogleCredential.FromFile(fullPath);
+        }
+
+        var app = FirebaseApp.DefaultInstance ?? FirebaseApp.Create(new AppOptions { Credential = credential });
+
+        _messaging = FirebaseMessaging.GetMessaging(app);
+    }
+
+    public async Task<PushResult> SendAsync(PushMessage message, CancellationToken ct = default)
+    {
+        var firebaseMessage = new Message
+        {
+            Token = message.Token,
+            Notification = new Notification { Title = message.Title, Body = message.Body },
+            Data = message.Data,
+            Android = new AndroidConfig { Priority = Priority.High }
+        };
+
+        try
+        {
+            await _messaging.SendAsync(firebaseMessage, ct);
+
+            return PushResult.Sent;
+        }
+        catch (FirebaseMessagingException ex) when (
+            ex.MessagingErrorCode is MessagingErrorCode.Unregistered or MessagingErrorCode.InvalidArgument)
+        {
+            _logger.LogWarning("FCM: токен недействителен ({Code}).", ex.MessagingErrorCode);
+
+            return PushResult.InvalidToken;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "FCM: не удалось отправить уведомление.");
+
+            return PushResult.Failed;
+        }
+    }
+}
