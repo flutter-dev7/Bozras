@@ -2,7 +2,7 @@ using Non.Domain.Common;
 
 namespace Non.Domain.Entities;
 
-public class Visit : BaseEntity
+public class Visit : BaseEntity, ITenantEntity
 {
     public Guid ShopId { get; set; }
     public Shop? Shop { get; set; }
@@ -12,4 +12,5 @@ public class Visit : BaseEntity
 
     public DateTime VisitedAt { get; set; } = DateTime.UtcNow;
     public string? Note { get; set; }
+    public Guid SupplierId { get; set; }
 }

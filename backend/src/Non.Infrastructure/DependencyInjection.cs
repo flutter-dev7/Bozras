@@ -9,6 +9,7 @@ using Non.Infrastructure.Notifications;
 using Non.Infrastructure.Persistence.Data;
 using Non.Infrastructure.Repositories;
 using Non.Infrastructure.Services;
+using Non.Infrastructure.Tenancy;
 
 namespace Non.Infrastructure;
 
@@ -87,6 +88,9 @@ public static class DependencyInjection
         services.AddScoped<IStockRepository, StockRepository>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IStockService, StockService>();
+        
+        services.AddScoped<ITenantContext, TenantContext>();
+        services.AddScoped<ITenantAccessService, TenantAccessService>();
         
         return services;
     }

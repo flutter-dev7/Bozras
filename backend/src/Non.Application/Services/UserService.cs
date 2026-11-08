@@ -12,11 +12,13 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITenantContext _tenant;
 
-    public UserService(IUserRepository userRepository, IUnitOfWork unitOfWork)
+    public UserService(IUserRepository userRepository, IUnitOfWork unitOfWork, ITenantContext tenant)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
+        _tenant = tenant;
     }
 
     public async Task<Result<PagedResult<UserDetailsResponse>>> GetPagedAsync(
@@ -39,7 +41,7 @@ public class UserService : IUserService
 
     public async Task<Result<UserDetailsResponse>> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetByIdAsync(id, ct);
+        var user = await _userRepository.GetScopedByIdAsync(id, ct);
         if (user is null)
             return Result<UserDetailsResponse>.Failure("Пользователь не найден.", ErrorType.NotFound);
 
@@ -64,6 +66,12 @@ public class UserService : IUserService
         
         if (await _userRepository.GetByEmailAsync(email, ct) is not null)
             return Result<UserDetailsResponse>.Failure("Пользователь с таким email уже существует.", ErrorType.Conflict);
+        
+        if (_tenant.SupplierId is null)
+            return Result<UserDetailsResponse>.Failure("Не выбран поставщик.", ErrorType.Forbidden);
+
+        if (request.Role == UserRole.SuperAdmin)
+            return Result<UserDetailsResponse>.Failure("Эту роль назначить нельзя.", ErrorType.Forbidden);
 
         if (await _userRepository.GetByPhoneAsync(phone, ct) is not null)
             return Result<UserDetailsResponse>.Failure("Пользователь с таким номером уже существует.", ErrorType.Conflict);
@@ -76,7 +84,8 @@ public class UserService : IUserService
             Email = email,
             EmailConfirmed = false,
             Role = request.Role,
-            IsActive = true
+            IsActive = true,
+            SupplierId = request.Role == UserRole.Shop ? null : _tenant.SupplierId,
         };
 
         await _userRepository.AddAsync(user, ct);
@@ -88,12 +97,17 @@ public class UserService : IUserService
     public async Task<Result<UserDetailsResponse>> UpdateAsync(
         Guid id, UpdateUserRequest request, Guid currentUserId, CancellationToken ct = default)
     {
-        var user = await _userRepository.GetTrackedByIdAsync(id, ct);
+        var user = await _userRepository.GetScopedTrackedByIdAsync(id, ct);
         if (user is null)
             return Result<UserDetailsResponse>.Failure("Пользователь не найден.", ErrorType.NotFound);
 
-        if (id == currentUserId && (!request.IsActive || request.Role != user.Role))
-            return Result<UserDetailsResponse>.Failure("Нельзя отключить себя или изменить свою роль.");
+        if (user.Role == UserRole.Shop)
+            return Result<UserDetailsResponse>.Failure(
+                "Данные владельца магазина меняет только он сам. Чтобы закрыть доступ, отключите магазин.",
+                ErrorType.Forbidden);
+
+        if (request.Role is UserRole.SuperAdmin or UserRole.Shop)
+            return Result<UserDetailsResponse>.Failure("Эту роль назначить нельзя.", ErrorType.Forbidden);
 
         var firstName = request.FirstName.Trim();
         var lastName = request.LastName.Trim();

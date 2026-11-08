@@ -18,50 +18,45 @@ public static class DbSeeder
         var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var passwords = scope.ServiceProvider.GetRequiredService<IPasswordService>();
 
-        var email = EmailNormalizer.Normalize(configuration["Seed:AdminEmail"]);
+        await LocationSeeder.SeedAsync(context);
+        await SeedSuperAdminAsync(context, configuration, passwords);
+    }
+
+    private static async Task SeedSuperAdminAsync(
+        AppDbContext context, IConfiguration configuration, IPasswordService passwords)
+    {
+        if (await context.Users.AnyAsync(u => u.Role == UserRole.SuperAdmin))
+            return;
+
+        var email = EmailNormalizer.Normalize(configuration["Seed:SuperAdminEmail"]);
         if (email is null)
             return;
 
         if (await context.Users.AnyAsync(u => u.Email == email))
             return;
 
-        var password = configuration["Seed:AdminPassword"];
+        var phone = PhoneNumberNormalizer.Normalize(configuration["Seed:SuperAdminPhone"])
+            ?? throw new InvalidOperationException("Задайте Seed:SuperAdminPhone.");
+
+        var password = configuration["Seed:SuperAdminPassword"];
         if (!string.IsNullOrEmpty(password))
         {
             var passwordError = PasswordRules.Validate(password);
             if (passwordError is not null)
-                throw new InvalidOperationException($"Seed:AdminPassword: {passwordError}");
+                throw new InvalidOperationException($"Seed:SuperAdminPassword: {passwordError}");
         }
 
-        var admin = await context.Users
-            .OrderBy(u => u.CreatedAt)
-            .FirstOrDefaultAsync(u => u.Role == UserRole.Admin && u.Email == null);
-
-        if (admin is null)
+        context.Users.Add(new User
         {
-            if (await context.Users.AnyAsync(u => u.Role == UserRole.Admin))
-                return;
-
-            var phone = PhoneNumberNormalizer.Normalize(configuration["Seed:AdminPhone"])
-                ?? throw new InvalidOperationException("Для создания админа задайте Seed:AdminPhone.");
-
-            admin = new User
-            {
-                FirstName = configuration["Seed:AdminFirstName"] ?? "Admin",
-                LastName = configuration["Seed:AdminLastName"] ?? "Non",
-                Phone = phone,
-                Role = UserRole.Admin,
-                IsActive = true
-            };
-
-            context.Users.Add(admin);
-        }
-
-        admin.Email = email;
-        admin.EmailConfirmed = true;
-
-        if (!string.IsNullOrEmpty(password))
-            admin.PasswordHash = passwords.Hash(password);
+            FirstName = configuration["Seed:SuperAdminFirstName"] ?? "Super",
+            LastName = configuration["Seed:SuperAdminLastName"] ?? "Admin",
+            Phone = phone,
+            Email = email,
+            EmailConfirmed = true,
+            Role = UserRole.SuperAdmin,
+            IsActive = true,
+            PasswordHash = string.IsNullOrEmpty(password) ? null : passwords.Hash(password)
+        });
 
         await context.SaveChangesAsync();
     }

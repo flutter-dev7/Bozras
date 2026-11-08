@@ -3,7 +3,7 @@ using Non.Domain.Enums;
 
 namespace Non.Domain.Entities;
 
-public class StockMovement : BaseEntity
+public class StockMovement : BaseEntity, ITenantEntity
 {
     public Guid ProductId { get; set; }
     public Product? Product { get; set; }
@@ -17,4 +17,5 @@ public class StockMovement : BaseEntity
 
     public Guid? CreatedByUserId { get; set; }
     public User? CreatedByUser { get; set; }
+    public Guid SupplierId { get; set; }
 }

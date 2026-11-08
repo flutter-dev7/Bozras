@@ -13,15 +13,18 @@ public class CategoryService : ICategoryService
     private readonly ICategoryRepository _categoryRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICacheService _cacheService;
+    private readonly ITenantContext _tenant;
 
     public CategoryService(
         ICategoryRepository categoryRepository,
         IUnitOfWork unitOfWork,
-        ICacheService cacheService)
+        ICacheService cacheService,
+        ITenantContext tenant)
     {
         _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
         _cacheService = cacheService;
+        _tenant = tenant;
     }
 
     public async Task<Result<IReadOnlyList<CategoryResponse>>> GetAllAsync(CancellationToken ct = default)
@@ -65,7 +68,7 @@ public class CategoryService : ICategoryService
         category.Name = name;
         await _unitOfWork.SaveChangesAsync(ct);
 
-        await _cacheService.RemoveAsync(CacheKeys.ActiveProducts);
+        await _cacheService.RemoveAsync(CacheKeys.ActiveProducts(_tenant.RequireSupplierId()));
 
         return Result<CategoryResponse>.Success(ToResponse(category, 0));
     }

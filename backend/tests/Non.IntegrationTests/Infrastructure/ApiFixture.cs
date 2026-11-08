@@ -24,6 +24,7 @@ using Non.Application.Interfaces.Services;
 using Non.Domain.Entities;
 using Non.Domain.Enums;
 using Non.Infrastructure.Persistence.Data;
+using Non.Infrastructure.Tenancy;
 using Npgsql;
 using Xunit;
 
@@ -111,7 +112,7 @@ public class ApiFixture : IAsyncLifetime
 
         var options = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(ConnectionString).Options;
 
-        await using (var db = new AppDbContext(options))
+        await using (var db = new AppDbContext(options, new TenantContext()))
         {
             await db.Database.EnsureDeletedAsync();
             await db.Database.MigrateAsync();

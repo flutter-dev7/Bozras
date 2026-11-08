@@ -28,6 +28,7 @@ public class OrderServiceTests
     private readonly Mock<ICacheService> _cache = new();
     private readonly Mock<IOrderNotifier> _notifier = new();
     private readonly Mock<IStockService> _stock = new();
+    private readonly Mock<ITenantContext> _tenant = new();
 
     private readonly Shop _shop = new() { Name = "Саодат", IsActive = true };
     private readonly Product _product = new() { Name = "Нони тандури", Price = 5m, IsActive = true };
@@ -72,6 +73,8 @@ public class OrderServiceTests
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<bool>.Success(true));
+        
+        _tenant.Setup(t => t.RequireSupplierId()).Returns(Guid.NewGuid());
 
         var now = new DateTimeOffset(2026, 10, 24, 17, 0, 0, TimeSpan.Zero);
         
@@ -79,7 +82,7 @@ public class OrderServiceTests
             _orders.Object, _shops.Object, _products.Object, _users.Object, _settings.Object,
             _payments.Object, _debts.Object, _unitOfWork.Object, _cache.Object, _notifier.Object,
             new FixedTimeProvider(now),
-            _stock.Object);
+            _stock.Object, _tenant.Object);
     }
 
     private void SetBalance(decimal delivered, decimal paid, decimal pending = 0m) =>

@@ -16,23 +16,26 @@ public class ProductService : IProductService
     private readonly ICategoryRepository _categoryRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICacheService _cacheService;
+    private readonly ITenantContext _tenant;
 
     public ProductService(
         IProductRepository productRepository,
         ICategoryRepository categoryRepository,
         IUnitOfWork unitOfWork,
-        ICacheService cacheService)
+        ICacheService cacheService,
+        ITenantContext tenant)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
         _unitOfWork = unitOfWork;
         _cacheService = cacheService;
+        _tenant = tenant;
     }
 
     public async Task<Result<IReadOnlyList<ProductResponse>>> GetActiveAsync(CancellationToken ct = default)
     {
         var products = await _cacheService.GetOrCreateAsync<IReadOnlyList<ProductResponse>>(
-            CacheKeys.ActiveProducts,
+            CacheKeys.ActiveProducts(_tenant.RequireSupplierId()),
             async () => (await _productRepository.GetActiveAsync(ct)).Select(ToResponse).ToList(),
             CacheDuration);
 
@@ -61,7 +64,7 @@ public class ProductService : IProductService
 
     public async Task<Result<ProductResponse>> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var key = CacheKeys.Product(id);
+        var key = CacheKeys.Product(_tenant.RequireSupplierId(), id);
 
         var cached = await _cacheService.GetAsync<ProductResponse>(key);
         if (cached is not null)
@@ -107,7 +110,7 @@ public class ProductService : IProductService
         await _productRepository.AddAsync(product, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        await _cacheService.RemoveAsync(CacheKeys.ActiveProducts);
+        await _cacheService.RemoveAsync(CacheKeys.ActiveProducts(_tenant.RequireSupplierId()));
 
         return Result<ProductResponse>.Success(ToResponse(product));
     }
@@ -143,8 +146,8 @@ public class ProductService : IProductService
 
         await _unitOfWork.SaveChangesAsync(ct);
 
-        await _cacheService.RemoveAsync(CacheKeys.ActiveProducts);
-        await _cacheService.RemoveAsync(CacheKeys.Product(id));
+        await _cacheService.RemoveAsync(CacheKeys.ActiveProducts(_tenant.RequireSupplierId()));
+        await _cacheService.RemoveAsync(CacheKeys.Product(_tenant.RequireSupplierId(), id));
 
         return Result<ProductResponse>.Success(ToResponse(product));
     }

@@ -92,8 +92,8 @@ public class OrderNotifier : IOrderNotifier
     private async Task NotifyAdminsAsync(
         CurrentUser actor, Order order, string type, string title, string body, CancellationToken ct)
     {
-        var admins = await _users.GetFcmTargetsByRoleAsync(UserRole.Admin, ct);
-
+        var admins = await _users.GetFcmTargetsByRoleAsync(UserRole.Admin, order.SupplierId, ct);
+        
         foreach (var admin in admins.Where(a => a.UserId != actor.Id))
             _queue.Enqueue(new PushMessage(admin.Token, title, body, BuildData(order, type)));
     }

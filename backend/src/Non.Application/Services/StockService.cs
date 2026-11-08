@@ -14,17 +14,20 @@ public class StockService : IStockService
     private readonly IProductRepository _productRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICacheService _cacheService;
+    private readonly ITenantContext _tenant;
 
     public StockService(
         IStockRepository stockRepository,
         IProductRepository productRepository,
         IUnitOfWork unitOfWork,
-        ICacheService cacheService)
+        ICacheService cacheService,
+        ITenantContext tenant)
     {
         _stockRepository = stockRepository;
         _productRepository = productRepository;
         _unitOfWork = unitOfWork;
         _cacheService = cacheService;
+        _tenant = tenant;
     }
 
     public async Task<Result<StockMovementResponse>> ReceiveAsync(
@@ -132,10 +135,10 @@ public class StockService : IStockService
 
     public async Task InvalidateCacheAsync(IEnumerable<Guid> productIds)
     {
-        await _cacheService.RemoveAsync(CacheKeys.ActiveProducts);
+        await _cacheService.RemoveAsync(CacheKeys.ActiveProducts(_tenant.RequireSupplierId()));
 
         foreach (var id in productIds.Distinct())
-            await _cacheService.RemoveAsync(CacheKeys.Product(id));
+            await _cacheService.RemoveAsync(CacheKeys.Product(_tenant.RequireSupplierId(), id));
     }
 
     private async Task<Product?> FindProductAsync(Guid id, CancellationToken ct) =>

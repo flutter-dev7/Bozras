@@ -2,7 +2,7 @@ using Non.Domain.Common;
 
 namespace Non.Domain.Entities;
 
-public class Product : BaseEntity
+public class Product : BaseEntity, ITenantEntity
 {
     public string Name { get; set; } = string.Empty;
     public int? WeightInGrams { get; set; }
@@ -15,4 +15,5 @@ public class Product : BaseEntity
 
     public Guid? CategoryId { get; set; }
     public Category? Category { get; set; }
+    public Guid SupplierId { get; set; }
 }

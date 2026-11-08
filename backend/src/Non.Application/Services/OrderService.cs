@@ -27,6 +27,7 @@ public class OrderService : IOrderService
     private readonly IOrderNotifier _notifier;
     private readonly TimeProvider _timeProvider;
     private readonly IStockService _stockService;
+    private readonly ITenantContext _tenant;
 
     public OrderService(
         IOrderRepository orderRepository,
@@ -40,7 +41,8 @@ public class OrderService : IOrderService
         ICacheService cacheService,
         IOrderNotifier notifier,
         TimeProvider timeProvider,
-        IStockService stockService)
+        IStockService stockService,
+        ITenantContext tenant)
     {
         _orderRepository = orderRepository;
         _shopRepository = shopRepository;
@@ -54,6 +56,7 @@ public class OrderService : IOrderService
         _notifier = notifier;
         _timeProvider = timeProvider;
         _stockService = stockService;
+        _tenant = tenant;
     }
 
     public async Task<Result<PagedResult<OrderResponse>>> GetPagedAsync(
@@ -549,7 +552,7 @@ public class OrderService : IOrderService
     private async Task<TimeOnly> GetCutoffTimeAsync(CancellationToken ct)
     {
         var value = await _cacheService.GetOrCreateAsync(
-            CacheKeys.OrderCutoffTime,
+            CacheKeys.OrderCutoffTime(_tenant.RequireSupplierId()),
             async () => await _settingRepository.GetValueAsync(SettingKeys.OrderCutoffTime, ct)
                         ?? SettingDefaults.OrderCutoffTime,
             CutoffCacheDuration);

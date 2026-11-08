@@ -17,6 +17,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Price).HasPrecision(18, 2);
         builder.Property(p => p.ImageUrl).HasMaxLength(500);
         builder.Property(p => p.Unit).IsRequired().HasMaxLength(20).HasDefaultValue("шт");
+        builder.HasIndex(p => new { p.SupplierId, p.Name });
 
         builder.HasOne(p => p.Category)
             .WithMany()

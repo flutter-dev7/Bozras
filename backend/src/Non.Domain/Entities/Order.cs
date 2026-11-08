@@ -3,7 +3,7 @@ using Non.Domain.Enums;
 
 namespace Non.Domain.Entities;
 
-public class Order : BaseEntity
+public class Order : BaseEntity, ITenantEntity
 {
     private static readonly Dictionary<OrderStatus, OrderStatus[]> AllowedTransitions = new()
     {
@@ -146,4 +146,6 @@ public class Order : BaseEntity
         Status = OrderStatus.Cancelled;
         RecordStatus(changedByUserId);
     }
+
+    public Guid SupplierId { get; set; }
 }

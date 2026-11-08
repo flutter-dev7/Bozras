@@ -3,7 +3,7 @@ using Non.Domain.Enums;
 
 namespace Non.Domain.Entities;
 
-public class Payment : BaseEntity
+public class Payment : BaseEntity, ITenantEntity
 {
     public Guid ShopId { get; set; }
     public Shop? Shop { get; set; }
@@ -60,4 +60,6 @@ public class Payment : BaseEntity
             ReversalReason = reason.Trim()
         };
     }
+
+    public Guid SupplierId { get; set; }
 }

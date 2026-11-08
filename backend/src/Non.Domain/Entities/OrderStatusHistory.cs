@@ -1,8 +1,9 @@
+using Non.Domain.Common;
 using Non.Domain.Enums;
 
 namespace Non.Domain.Entities;
 
-public class OrderStatusHistory
+public class OrderStatusHistory : ITenantEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
 
@@ -15,4 +16,5 @@ public class OrderStatusHistory
     public User? ChangedByUser { get; set; }
 
     public DateTime ChangedAt { get; set; } = DateTime.UtcNow;
+    public Guid SupplierId { get; set; }
 }

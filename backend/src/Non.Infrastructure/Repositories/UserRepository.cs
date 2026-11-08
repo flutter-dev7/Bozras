@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Non.Application.Common;
 using Non.Application.Interfaces.Repositories;
+using Non.Application.Interfaces.Services;
 using Non.Domain.Entities;
 using Non.Domain.Enums;
 using Non.Infrastructure.Persistence.Data;
@@ -10,10 +11,26 @@ namespace Non.Infrastructure.Repositories;
 public class UserRepository : IUserRepository
 {
     private readonly AppDbContext _context;
+    private readonly ITenantContext _tenant;
 
-    public UserRepository(AppDbContext context)
+    public UserRepository(AppDbContext context, ITenantContext tenant)
     {
         _context = context;
+        _tenant = tenant;
+    }
+
+    private IQueryable<User> ScopedUsers()
+    {
+        var supplierId = _tenant.SupplierId;
+
+        if (supplierId is null)
+            return _context.Users.Where(_ => false);
+
+        var id = supplierId.Value;
+
+        return _context.Users.Where(u =>
+            u.Role != UserRole.SuperAdmin &&
+            (u.SupplierId == id || _context.Shops.Any(s => s.UserId == u.Id)));
     }
 
     public Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
@@ -22,13 +39,19 @@ public class UserRepository : IUserRepository
     public Task<User?> GetTrackedByIdAsync(Guid id, CancellationToken ct = default) =>
         _context.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
 
+    public Task<User?> GetScopedByIdAsync(Guid id, CancellationToken ct = default) =>
+        ScopedUsers().AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, ct);
+
+    public Task<User?> GetScopedTrackedByIdAsync(Guid id, CancellationToken ct = default) =>
+        ScopedUsers().FirstOrDefaultAsync(u => u.Id == id, ct);
+
     public Task<User?> GetByPhoneAsync(string phone, CancellationToken ct = default) =>
         _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Phone == phone, ct);
 
     public async Task<(List<User> Items, int TotalCount)> GetPagedAsync(
         string? search, UserRole? role, bool? isActive, int page, int pageSize, CancellationToken ct = default)
     {
-        var query = _context.Users.AsNoTracking().AsQueryable();
+        var query = ScopedUsers().AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -55,17 +78,22 @@ public class UserRepository : IUserRepository
 
         return (items, totalCount);
     }
-    
+
     public Task<List<User>> GetTrackedByFcmTokenAsync(string token, CancellationToken ct = default) =>
         _context.Users.Where(u => u.FcmToken == token).ToListAsync(ct);
 
-    public Task<List<FcmTarget>> GetFcmTargetsByRoleAsync(UserRole role, CancellationToken ct = default) =>
+    public Task<List<FcmTarget>> GetFcmTargetsByRoleAsync(
+        UserRole role, Guid supplierId, CancellationToken ct = default) =>
         _context.Users
             .AsNoTracking()
-            .Where(u => u.Role == role && u.IsActive && u.FcmToken != null && u.FcmToken != "")
+            .Where(u => u.Role == role
+                        && u.SupplierId == supplierId
+                        && u.IsActive
+                        && u.FcmToken != null
+                        && u.FcmToken != "")
             .Select(u => new FcmTarget(u.Id, u.FcmToken!))
             .ToListAsync(ct);
-    
+
     public Task<User?> GetByEmailAsync(string email, CancellationToken ct = default) =>
         _context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email, ct);
 

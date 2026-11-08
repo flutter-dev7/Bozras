@@ -4,6 +4,7 @@ namespace Non.Domain.Constants;
 
 public static class RoleNames
 {
+    public const string SuperAdmin = nameof(UserRole.SuperAdmin);
     public const string Admin = nameof(UserRole.Admin);
     public const string Agent = nameof(UserRole.Agent);
     public const string Courier = nameof(UserRole.Courier);

@@ -23,16 +23,21 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         var expiresAt = DateTime.UtcNow.AddMinutes(_settings.ExpirationMinutes);
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Secret));
 
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("phone", user.Phone),
+            new("name", user.FullName),
+            new("role", user.Role.ToString())
+        };
+
+        if (user.SupplierId.HasValue)
+            claims.Add(new Claim("supplier_id", user.SupplierId.Value.ToString()));
+
         var descriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("phone", user.Phone),
-                new Claim("name", user.FullName),
-                new Claim("role", user.Role.ToString())
-            }),
+            Subject = new ClaimsIdentity(claims),
             Expires = expiresAt,
             Issuer = _settings.Issuer,
             Audience = _settings.Audience,

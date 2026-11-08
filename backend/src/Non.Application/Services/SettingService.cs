@@ -13,15 +13,18 @@ public class SettingService : ISettingService
     private readonly ISettingRepository _settingRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICacheService _cacheService;
+    private readonly ITenantContext _tenant;
 
     public SettingService(
         ISettingRepository settingRepository,
         IUnitOfWork unitOfWork,
-        ICacheService cacheService)
+        ICacheService cacheService,
+        ITenantContext tenant)
     {
         _settingRepository = settingRepository;
         _unitOfWork = unitOfWork;
         _cacheService = cacheService;
+        _tenant = tenant;
     }
 
     public async Task<Result<SettingsResponse>> GetAsync(CancellationToken ct = default)
@@ -44,7 +47,7 @@ public class SettingService : ISettingService
 
         await _settingRepository.SetValueAsync(SettingKeys.OrderCutoffTime, value, ct);
         await _unitOfWork.SaveChangesAsync(ct);
-        await _cacheService.RemoveAsync(CacheKeys.OrderCutoffTime);
+        await _cacheService.RemoveAsync(CacheKeys.OrderCutoffTime(_tenant.RequireSupplierId()));
 
         return Result<SettingsResponse>.Success(new SettingsResponse { OrderCutoffTime = value });
     }

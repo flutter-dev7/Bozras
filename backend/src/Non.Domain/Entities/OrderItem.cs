@@ -2,7 +2,7 @@ using Non.Domain.Common;
 
 namespace Non.Domain.Entities;
 
-public class OrderItem : BaseEntity
+public class OrderItem : BaseEntity, ITenantEntity
 {
     public Guid OrderId { get; set; }
     public Order? Order { get; set; }
@@ -14,4 +14,5 @@ public class OrderItem : BaseEntity
     public decimal UnitPrice { get; set; }
 
     public decimal LineTotal => Quantity * UnitPrice;
+    public Guid SupplierId { get; set; }
 }
