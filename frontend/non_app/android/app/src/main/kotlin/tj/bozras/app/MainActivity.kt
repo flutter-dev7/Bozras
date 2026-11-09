@@ -1,4 +1,4 @@
-package tj.non.non_app
+package tj.bozras.app
 
 import android.app.NotificationChannel
 import android.app.NotificationManager

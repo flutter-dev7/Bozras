@@ -20,8 +20,8 @@ public sealed class BrevoEmailSender : IEmailSender
 
         _fromEmail = configuration["Email:FromEmail"]
             ?? throw new InvalidOperationException("Не задан Email:FromEmail.");
-        _fromName = configuration["Email:FromName"] ?? "Нон";
-
+        _fromName = configuration["Email:FromName"] ?? "Bozras";
+        
         _http.BaseAddress = new Uri("https://api.brevo.com/v3/");
         _http.Timeout = TimeSpan.FromSeconds(15);
         _http.DefaultRequestHeaders.Add("api-key", configuration["Email:BrevoApiKey"]);
