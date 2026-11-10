@@ -31,7 +31,7 @@ public class OrderServiceTests
     private readonly Mock<ITenantContext> _tenant = new();
 
     private readonly Shop _shop = new() { Name = "Саодат", IsActive = true };
-    private readonly Product _product = new() { Name = "Нони тандури", Price = 5m, IsActive = true };
+    private readonly Product _product = new() { Name = "Bozrasи тандури", Price = 5m, IsActive = true };
 
     private Order? _savedOrder;
     private Payment? _savedPayment;
@@ -214,7 +214,7 @@ public class OrderServiceTests
                 It.IsAny<Guid>(),
                 It.IsAny<Guid>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Result<bool>.Failure("Недостаточно товара «Нони тандури»: осталось 3 шт."));
+            .ReturnsAsync(Result<bool>.Failure("Недостаточно товара «Bozrasи тандури»: осталось 3 шт."));
 
         var result = await _service.CreateAsync(CreateRequest(PaymentType.Now, 10), Caller(UserRole.Agent));
 

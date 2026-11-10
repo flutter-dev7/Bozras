@@ -81,9 +81,12 @@ export function LoginPage() {
         <div className="pointer-events-none absolute -bottom-32 -left-20 size-96 rounded-full bg-[#FFD9A0]/20 blur-3xl" />
         <Wheat className="pointer-events-none absolute -bottom-20 -right-16 size-[28rem] rotate-12 text-white/5" />
 
-        <span className="relative text-5xl" style={wordmarkStyle}>
-          Нон
-        </span>
+        <div className="relative flex items-center gap-4">
+          <img src="/logo.png" alt="Bozras" className="size-16 rounded-2xl shadow-xl shadow-black/30" />
+          <span className="text-5xl" style={wordmarkStyle}>
+            Bozras
+          </span>
+        </div>
 
         <div className="relative">
           <h2 className="text-4xl font-extrabold leading-tight xl:text-5xl">
@@ -120,16 +123,16 @@ export function LoginPage() {
         <div className="pointer-events-none absolute -bottom-24 -left-16 size-80 rounded-full bg-[#7A4E16]/10 blur-3xl" />
 
         <div className="relative w-full max-w-md">
-          <div className="mb-6 text-center lg:hidden">
-            <span className="text-5xl text-[#3B2A1A]" style={wordmarkStyle}>
-              Нон
-            </span>
+          <div className="mb-6 flex justify-center lg:hidden">
+            <img src="/logo-full.png" alt="Bozras" className="h-16 w-auto" />
           </div>
 
           <div className="rounded-3xl bg-white p-8 shadow-xl shadow-amber-900/10 ring-1 ring-black/5 sm:p-10">
-            <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7A4E16] to-[#C8801A] text-white shadow-lg shadow-amber-900/20">
-              <Wheat className="size-7" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Bozras"
+              className="mb-6 size-14 rounded-2xl shadow-lg shadow-amber-900/20"
+            />
 
             <h1 className="text-3xl font-extrabold text-[#3B2A1A]">Добро пожаловать</h1>
             <p className="mt-2 text-stone-500">Войдите в панель администратора</p>
@@ -201,7 +204,7 @@ export function LoginPage() {
             </form>
           </div>
 
-          <p className="mt-6 text-center text-sm text-stone-400">© Нон · Панель администратора</p>
+          <p className="mt-6 text-center text-sm text-stone-400">© Bozras · Панель администратора</p>
         </div>
       </div>
     </div>

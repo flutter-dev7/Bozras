@@ -13,7 +13,7 @@ class AppWordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(
-      'Нон',
+      'Bozras',
       style: GoogleFonts.playfairDisplay(
         fontSize: size,
         fontWeight: FontWeight.w900,
@@ -47,9 +47,7 @@ class AppLogo extends StatelessWidget {
         Container(
           width: size,
           height: size,
-          padding: EdgeInsets.all(size * 0.16),
           decoration: BoxDecoration(
-            color: AppColors.cream,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -59,11 +57,21 @@ class AppLogo extends StatelessWidget {
               ),
             ],
           ),
-          child: Image.asset(AppAssets.logo),
+          child: ClipOval(
+            child: Image.asset(
+              AppAssets.logo,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+            ),
+          ),
         ),
         if (showName) ...[
           const SizedBox(height: 16),
-          AppWordmark(size: size * 0.5, color: onDark ? AppColors.cream : AppColors.brown),
+          AppWordmark(
+            size: size * 0.5,
+            color: onDark ? AppColors.cream : AppColors.brown,
+          ),
         ],
         if (showTagline) ...[
           const SizedBox(height: 8),

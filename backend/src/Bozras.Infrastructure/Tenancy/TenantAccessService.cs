@@ -1,3 +1,4 @@
+using Bozras.Application.Common;
 using Microsoft.EntityFrameworkCore;
 using Bozras.Application.Interfaces.Services;
 using Bozras.Domain.Enums;
@@ -17,9 +18,17 @@ public class TenantAccessService : ITenantAccessService
     public Task<bool> SupplierExistsAsync(Guid supplierId, CancellationToken ct = default) =>
         _context.Suppliers.AnyAsync(s => s.Id == supplierId, ct);
 
-    public Task<bool> IsSupplierAvailableAsync(Guid supplierId, CancellationToken ct = default) =>
-        _context.Suppliers.AnyAsync(
-            s => s.Id == supplierId && s.IsActive && s.SubscriptionStatus != SubscriptionStatus.Suspended, ct);
+    public Task<bool> IsSupplierAvailableAsync(Guid supplierId, CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var graceDays = SubscriptionRules.GraceDays;
+
+        return _context.Suppliers.AnyAsync(
+            s => s.Id == supplierId
+                 && s.IsActive
+                 && s.SubscriptionStatus != SubscriptionStatus.Suspended
+                 && (s.SubscriptionEndsAt == null || s.SubscriptionEndsAt.Value.AddDays(graceDays) > now), ct);
+    }
 
     public Task<bool> IsShopConnectedAsync(Guid userId, Guid supplierId, CancellationToken ct = default) =>
         _context.Shops

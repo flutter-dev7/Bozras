@@ -5,12 +5,12 @@ namespace Bozras.Application.Common;
 public static class EmailTemplates
 {
     public static (string Subject, string Html) Verification(string name, string code, int lifetimeMinutes) =>
-        ("Нон: код подтверждения email",
+        ("Bozras: код подтверждения email",
             Build(name, "Ваш код подтверждения email:", code, lifetimeMinutes,
-                "Если вы не регистрировались в приложении «Нон», просто проигнорируйте это письмо."));
+                "Если вы не регистрировались в приложении «Bozras», просто проигнорируйте это письмо."));
 
     public static (string Subject, string Html) PasswordReset(string name, string code, int lifetimeMinutes) =>
-        ("Нон: код для смены пароля",
+        ("Bozras: код для смены пароля",
             Build(name, "Ваш код для смены пароля:", code, lifetimeMinutes,
                 "Если вы не запрашивали смену пароля, просто проигнорируйте это письмо: пароль останется прежним."));
 

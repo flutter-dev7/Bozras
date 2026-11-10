@@ -13,6 +13,9 @@ import { UsersPage } from '@/features/users/users-page'
 import { NotFoundPage } from '@/pages/not-found-page'
 import { PlanPage } from './features/products/plan-page'
 import { ShopPage } from './features/shops/shop-page'
+import { SuppliersPage } from './features/superadmin/suppliers-page'
+import { LocationsPage } from './features/superadmin/locations-page'
+import { PlansPage } from './features/superadmin/plans-page'
 
 export default function App() {
   return (
@@ -32,6 +35,9 @@ export default function App() {
             <Route path="products" element={<ProductsPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="superadmin/suppliers" element={<SuppliersPage />} />
+            <Route path="superadmin/locations" element={<LocationsPage />} />
+            <Route path="superadmin/plans" element={<PlansPage />} />
           </Route>
         </Route>
 

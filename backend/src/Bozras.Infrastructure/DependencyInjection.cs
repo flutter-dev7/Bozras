@@ -92,6 +92,13 @@ public static class DependencyInjection
         services.AddScoped<ITenantContext, TenantContext>();
         services.AddScoped<ITenantAccessService, TenantAccessService>();
         
+        services.AddScoped<ISupplierRepository, SupplierRepository>();
+        services.AddScoped<IPlanRepository, PlanRepository>();
+        services.AddScoped<ILocationRepository, LocationRepository>();
+        services.AddScoped<ISupplierService, SupplierService>();
+        services.AddScoped<IPlanService, PlanService>();
+        services.AddScoped<ILocationService, LocationService>();
+        
         return services;
     }
 }

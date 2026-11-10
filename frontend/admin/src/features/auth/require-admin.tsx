@@ -1,10 +1,13 @@
 import { Loader2 } from 'lucide-react'
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
+
+import { supplierMode } from '@/lib/tokens'
 
 import { useAuth } from './auth-context'
 
 export function RequireAdmin() {
-  const { status } = useAuth()
+  const { status, user } = useAuth()
+  const { pathname } = useLocation()
 
   if (status === 'loading') {
     return (
@@ -15,6 +18,15 @@ export function RequireAdmin() {
   }
 
   if (status === 'guest') return <Navigate to="/login" replace />
+
+  const isSuper = user?.role === 'SuperAdmin'
+  const inSuperArea = pathname.startsWith('/superadmin')
+
+  if (isSuper && !inSuperArea && !supplierMode.get()) {
+    return <Navigate to="/superadmin/suppliers" replace />
+  }
+
+  if (!isSuper && inSuperArea) return <Navigate to="/orders" replace />
 
   return <Outlet />
 }

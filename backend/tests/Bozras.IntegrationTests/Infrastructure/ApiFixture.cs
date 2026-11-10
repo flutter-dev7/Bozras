@@ -221,7 +221,7 @@ public class ApiFixture : IAsyncLifetime
     {
         var response = await admin.PostAsync<ProductResponse>("/api/products", new CreateProductRequest
         {
-            Name = "Нон " + Guid.NewGuid().ToString("N")[..10],
+            Name = "Bozras " + Guid.NewGuid().ToString("N")[..10],
             WeightInGrams = 300,
             Price = price
         });
