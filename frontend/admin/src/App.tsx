@@ -13,13 +13,20 @@ import { UsersPage } from '@/features/users/users-page'
 import { NotFoundPage } from '@/pages/not-found-page'
 import { PlanPage } from './features/products/plan-page'
 import { ShopPage } from './features/shops/shop-page'
+import { SuppliersPage } from './features/superadmin/suppliers-page'
+import { LocationsPage } from './features/superadmin/locations-page'
+import { PlansPage } from './features/superadmin/plans-page'
+import { RequestsPage } from './features/shops/requests-page'
+import { ProfilePage } from './features/supplier/profile-page'
+import { ForgotPasswordPage } from './features/auth/forgot-password-page'
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route element={<RequireAdmin />}>
           <Route element={<AppLayout />}>
             <Route index element={<Navigate to="/orders" replace />} />
@@ -29,9 +36,14 @@ export default function App() {
             <Route path="plan" element={<PlanPage />} />
             <Route path="shops" element={<ShopsPage />} />
             <Route path="shops/:id" element={<ShopPage />} />
+            <Route path="requests" element={<RequestsPage />} />
+            <Route path="profile" element={<ProfilePage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="superadmin/suppliers" element={<SuppliersPage />} />
+            <Route path="superadmin/locations" element={<LocationsPage />} />
+            <Route path="superadmin/plans" element={<PlansPage />} />
           </Route>
         </Route>
 

@@ -1,0 +1,32 @@
+using Bozras.Application.Common;
+using Bozras.Application.DTOs.Connections.Response;
+using Bozras.Application.DTOs.Shops.Request;
+using Bozras.Application.DTOs.Shops.Response;
+
+namespace Bozras.Application.Interfaces.Services;
+
+public interface IShopService
+{
+    Task<Result<PagedResult<ShopResponse>>> GetPagedAsync(ShopQueryRequest request, CancellationToken ct = default);
+
+    Task<Result<ShopResponse>> GetByIdAsync(Guid id, CancellationToken ct = default);
+
+    Task<Result<ShopResponse>> GetMyAsync(Guid userId, CancellationToken ct = default);
+
+    Task<Result<ShopResponse>> CreateAsync(CreateShopRequest request, CancellationToken ct = default);
+
+    Task<Result<ShopResponse>> CreateMyAsync(Guid userId, CreateShopRequest request, CancellationToken ct = default);
+
+    Task<Result<ShopResponse>> UpdateAsync(Guid id, UpdateShopRequest request, CancellationToken ct = default);
+
+    Task<Result<ShopResponse>> SetOwnerAsync(Guid id, SetOwnerRequest request, CancellationToken ct = default);
+
+    Task<Result<ShopResponse>> SetDebtLimitAsync(Guid id, SetDebtLimitRequest request, CancellationToken ct = default);
+    
+    Task<Result<ShopResponse>> SetLocationAsync(Guid id, SetLocationRequest request, CancellationToken ct = default);
+
+    Task<Result<ShopResponse>> SetMyLocationAsync(Guid userId, SetLocationRequest request, CancellationToken ct = default);
+    Task<Result<List<ShopRequestResponse>>> GetRequestsAsync(CancellationToken ct = default);
+    Task<Result> ApproveAsync(Guid id, CancellationToken ct = default);
+    Task<Result> RejectAsync(Guid id, CancellationToken ct = default);
+}

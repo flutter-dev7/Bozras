@@ -1,5 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:non_app/features/connections/presentation/providers/connections_providers.dart';
+import 'package:non_app/features/orders/domain/entities/courier.dart';
+import 'package:non_app/features/orders/domain/usecases/assign_courier_usecase.dart';
 import 'package:non_app/features/orders/domain/usecases/change_order_status_usecase.dart';
+import 'package:non_app/features/orders/domain/usecases/get_couriers_usecase.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/providers/core_providers.dart';
@@ -41,6 +45,17 @@ final changeOrderStatusUseCaseProvider = Provider(
   (ref) => ChangeOrderStatusUseCase(ref.watch(ordersRepositoryProvider)),
 );
 
+final getCouriersUseCaseProvider = Provider(
+  (ref) => GetCouriersUseCase(ref.watch(ordersRepositoryProvider)),
+);
+final assignCourierUseCaseProvider = Provider(
+  (ref) => AssignCourierUseCase(ref.watch(ordersRepositoryProvider)),
+);
+
+final couriersProvider = FutureProvider.autoDispose<List<Courier>>((ref) {
+  return ref.watch(getCouriersUseCaseProvider)();
+});
+
 final orderDetailsProvider = FutureProvider.autoDispose.family<Order, String>((
   ref,
   id,
@@ -58,6 +73,7 @@ class CartNotifier extends Notifier<Map<String, OrderLine>> {
   @override
   Map<String, OrderLine> build() {
     ref.watch(currentUserIdProvider);
+    ref.watch(currentSupplierIdProvider);
 
     return {};
   }
@@ -138,6 +154,7 @@ class OrdersNotifier extends AutoDisposeAsyncNotifier<OrdersState> {
   Future<OrdersState> build() async {
     final status = ref.watch(orderFilterProvider);
     ref.watch(currentUserIdProvider);
+    ref.watch(currentSupplierIdProvider);
 
     final page = await ref.read(getOrdersUseCaseProvider)(
       status: status,

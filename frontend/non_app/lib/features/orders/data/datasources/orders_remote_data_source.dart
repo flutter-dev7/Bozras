@@ -1,3 +1,5 @@
+import 'package:non_app/features/orders/data/models/courier_model.dart';
+
 import '../../../../core/models/paged_result.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/formatters.dart';
@@ -89,6 +91,34 @@ class OrdersRemoteDataSource {
         if (paymentAmount != null) 'paymentAmount': paymentAmount,
         if (paymentMethod != null) 'paymentMethod': paymentMethod.apiName,
       },
+    );
+  }
+
+  Future<List<CourierModel>> getCouriers() async {
+    final path = Uri(
+      path: '/api/Users',
+      queryParameters: {
+        'Role': 'Courier',
+        'IsActive': 'true',
+        'Page': '1',
+        'PageSize': '100',
+      },
+    ).toString();
+
+    final data = await _client.get(path);
+
+    return PagedResult.fromJson(
+      data,
+      CourierModel.fromJson,
+      page: 1,
+      pageSize: 100,
+    ).items;
+  }
+
+  Future<void> assignCourier(String orderId, String courierId) async {
+    await _client.put(
+      '/api/Orders/$orderId/courier',
+      data: {'courierId': courierId},
     );
   }
 }

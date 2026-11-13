@@ -7,7 +7,7 @@ import { AuthContext, type AuthStatus, type AuthUser } from './auth-context'
 
 type TokenPair = { accessToken: string; refreshToken: string }
 
-const isAdmin = (user: AuthUser) => user.role.toLowerCase() === 'admin'
+const isStaff = (user: AuthUser) => ['admin', 'superadmin'].includes(user.role.toLowerCase())
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (cancelled) return
 
-        if (!isAdmin(me)) {
+        if (!isStaff(me)) {
           resetSession()
           return
         }
@@ -71,8 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const me = await request<AuthUser>({ method: 'GET', url: '/api/Auth/me' })
 
-        if (!isAdmin(me)) {
-          throw new ApiError('Вход только для администратора.')
+        if (!isStaff(me)) {
+          throw new ApiError('Вход только для сотрудников.')
         }
 
         setUser(me)

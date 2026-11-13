@@ -20,7 +20,7 @@ class PushService {
   bool _listening = false;
   String? _token;
 
-    void Function(String orderId)? _onOpenOrder;
+  void Function(String orderId, String? supplierId)? _onOpenOrder;
   void Function(RemoteMessage message)? _onForeground;
   void Function(RemoteMessage message)? _onOpened;
 
@@ -30,8 +30,14 @@ class PushService {
     return value is String && value.isNotEmpty ? value : null;
   }
 
+  static String? supplierIdOf(RemoteMessage message) {
+    final value = message.data['supplierId'];
+
+    return value is String && value.isNotEmpty ? value : null;
+  }
+
   Future<void> start({
-    required void Function(String orderId) onOpenOrder,
+    required void Function(String orderId, String? supplierId) onOpenOrder,
     required void Function(RemoteMessage message) onForeground,
     void Function(RemoteMessage message)? onOpened,
   }) async {
@@ -104,6 +110,6 @@ class PushService {
 
     final id = orderIdOf(message);
 
-    if (id != null) _onOpenOrder?.call(id);
+    if (id != null) _onOpenOrder?.call(id, supplierIdOf(message));
   }
 }

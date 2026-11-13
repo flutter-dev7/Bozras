@@ -4,7 +4,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from 'axios'
 
-import { tokens } from './tokens'
+import { supplierMode, tokens } from './tokens'
 
 export type Envelope<T> = {
   isSuccess: boolean
@@ -62,6 +62,22 @@ async function refreshTokens(): Promise<RefreshOutcome> {
 }
 
 type RetriableConfig = InternalAxiosRequestConfig & { _retried?: boolean }
+
+const NO_SUPPLIER_HEADER = /^\/api\/(superadmin|locations|auth)/i
+
+http.interceptors.request.use((config) => {
+  const token = tokens.access
+
+  if (token) config.headers.Authorization = `Bearer ${token}`
+
+  const supplier = supplierMode.get()
+
+  if (supplier && !NO_SUPPLIER_HEADER.test(config.url ?? '')) {
+    config.headers['X-Supplier-Id'] = supplier.id
+  }
+
+  return config
+})
 
 http.interceptors.request.use((config) => {
   const token = tokens.access

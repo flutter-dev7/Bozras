@@ -54,7 +54,7 @@ const nextStatus: Partial<Record<OrderStatus, OrderStatus>> = {
 
 const nextLabel: Partial<Record<OrderStatus, string>> = {
   New: 'Принять заказ',
-  Accepted: 'Начать выпечку',
+  Accepted: 'Начать готовку',
   Baking: 'Отправить в путь',
   OnTheWay: 'Отметить доставленным',
 }

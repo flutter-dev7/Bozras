@@ -53,7 +53,7 @@ export function UsersPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-extrabold text-stone-900">Пользователи</h1>
-          <p className="mt-1 text-stone-500">Агенты, курьеры, администраторы и владельцы магазинов</p>
+          <p className="mt-1 text-stone-500">Сотрудники и подключённые магазины</p>
         </div>
         <Button className="h-10 rounded-xl font-bold" onClick={() => setTarget({ mode: 'create' })}>
           <Plus className="size-4" />

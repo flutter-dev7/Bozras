@@ -1,0 +1,36 @@
+using Bozras.Application.Common;
+using Bozras.Application.DTOs.Auth.Request;
+using Bozras.Application.DTOs.Auth.Response;
+
+namespace Bozras.Application.Interfaces.Services;
+
+public interface IAuthService
+{
+    Task<Result> RegisterAsync(RegisterRequest request, CancellationToken ct = default);
+
+    Task<Result<AuthResponse>> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken ct = default);
+
+    Task<Result> ResendVerificationAsync(EmailRequest request, CancellationToken ct = default);
+
+    Task<Result<AuthResponse>> LoginAsync(LoginRequest request, CancellationToken ct = default);
+
+    Task<Result> ForgotPasswordAsync(EmailRequest request, CancellationToken ct = default);
+
+    Task<Result<ResetTokenResponse>> VerifyResetCodeAsync(VerifyResetCodeRequest request, CancellationToken ct = default);
+
+    Task<Result> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct = default);
+
+    Task<Result<AuthResponse>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken ct = default);
+
+    Task<Result<AuthResponse>> RefreshAsync(RefreshTokenRequest request, CancellationToken ct = default);
+
+    Task<Result> LogoutAsync(RefreshTokenRequest request, CancellationToken ct = default);
+
+    Task<Result> LogoutAllAsync(Guid userId, CancellationToken ct = default);
+
+    Task<Result<UserResponse>> GetCurrentUserAsync(Guid userId, CancellationToken ct = default);
+    
+    Task<Result<List<SessionResponse>>> GetSessionsAsync(Guid userId, Guid? currentSessionId, CancellationToken ct = default);
+
+    Task<Result> RevokeSessionAsync(Guid userId, Guid sessionId, CancellationToken ct = default);
+}

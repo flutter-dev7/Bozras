@@ -1,0 +1,131 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Bozras.Application.DTOs.Shops.Request;
+using Bozras.Application.Interfaces.Services;
+using Bozras.Domain.Constants;
+
+namespace Bozras.API.Controllers;
+
+[Route("api/[controller]")]
+[Authorize]
+public class ShopsController : ApiControllerBase
+{
+    private readonly IShopService _shopService;
+    private readonly IDebtService _debtService;
+
+    public ShopsController(IShopService shopService, IDebtService debtService)
+    {
+        _shopService = shopService;
+        _debtService = debtService;
+    }
+
+    [HttpGet]
+    [Authorize(Roles = RoleNames.AdminOrAgent)]
+    public async Task<IActionResult> GetPaged([FromQuery] ShopQueryRequest request, CancellationToken ct)
+    {
+        return ToActionResult(await _shopService.GetPagedAsync(request, ct));
+    }
+
+    [HttpGet("{id:guid}")]
+    [Authorize(Roles = RoleNames.AdminOrAgent)]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    {
+        return ToActionResult(await _shopService.GetByIdAsync(id, ct));
+    }
+
+    [HttpPost]
+    [Authorize(Roles = RoleNames.AdminOrAgent)]
+    public async Task<IActionResult> Create([FromBody] CreateShopRequest request, CancellationToken ct)
+    {
+        var result = await _shopService.CreateAsync(request, ct);
+
+        if (result.IsFailure)
+            return ToErrorResult(result);
+
+        return CreatedAtAction(nameof(GetMy), result);
+        
+    }
+
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = RoleNames.AdminOrAgent)]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateShopRequest request, CancellationToken ct)
+    {
+        return ToActionResult(await _shopService.UpdateAsync(id, request, ct));
+    }
+
+    [HttpPut("{id:guid}/owner")]
+    [Authorize(Roles = RoleNames.AdminOrAgent)]
+    public async Task<IActionResult> SetOwner(Guid id, [FromBody] SetOwnerRequest request, CancellationToken ct)
+    {
+        return ToActionResult(await _shopService.SetOwnerAsync(id, request, ct));
+    }
+
+    [HttpPut("{id:guid}/debt-limit")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> SetDebtLimit(Guid id, [FromBody] SetDebtLimitRequest request, CancellationToken ct)
+    {
+        return ToActionResult(await _shopService.SetDebtLimitAsync(id, request, ct));
+    }
+
+    [HttpGet("my")]
+    [Authorize(Roles = RoleNames.Shop)]
+    public async Task<IActionResult> GetMy(CancellationToken ct)
+    {
+        return ToActionResult(await _shopService.GetMyAsync(CurrentUserId, ct));
+    }
+
+    [HttpPost("my")]
+    [Authorize(Roles = RoleNames.Shop)]
+    public async Task<IActionResult> CreateMy([FromBody] CreateShopRequest request, CancellationToken ct)
+    {
+        var result = await _shopService.CreateMyAsync(CurrentUserId, request, ct);
+
+        if (result.IsFailure)
+            return ToErrorResult(result);
+
+        return CreatedAtAction(nameof(GetMy), result);
+    }
+    
+    [HttpGet("my/balance")]
+    [Authorize(Roles = RoleNames.Shop)]
+    public async Task<IActionResult> GetMyBalance(CancellationToken ct)
+    {
+        return ToActionResult(await _debtService.GetMyBalanceAsync(Caller, ct));
+    }
+
+    [HttpGet("{id:guid}/balance")]
+    [Authorize(Roles = RoleNames.AdminOrAgent + "," + RoleNames.Courier)]
+    public async Task<IActionResult> GetBalance(Guid id, CancellationToken ct)
+    {
+        return ToActionResult(await _debtService.GetShopBalanceAsync(id, Caller, ct));
+    }
+    
+    [HttpPut("{id:guid}/location")]
+    [Authorize(Roles = RoleNames.AdminOrAgent)]
+    public async Task<IActionResult> SetLocation(Guid id, [FromBody] SetLocationRequest request, CancellationToken ct)
+    {
+        return ToActionResult(await _shopService.SetLocationAsync(id, request, ct));
+    }
+
+    [HttpPut("my/location")]
+    [Authorize(Roles = RoleNames.Shop)]
+    public async Task<IActionResult> SetMyLocation([FromBody] SetLocationRequest request, CancellationToken ct)
+    {
+        return ToActionResult(await _shopService.SetMyLocationAsync(CurrentUserId, request, ct));
+    }
+    
+    [HttpGet("requests")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> GetRequests(CancellationToken ct) =>
+        ToActionResult(await _shopService.GetRequestsAsync(ct));
+
+    [HttpPost("{id:guid}/approve")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> Approve(Guid id, CancellationToken ct) =>
+        ToActionResult(await _shopService.ApproveAsync(id, ct));
+
+    [HttpPost("{id:guid}/reject")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> Reject(Guid id, CancellationToken ct) =>
+        ToActionResult(await _shopService.RejectAsync(id, ct));
+}

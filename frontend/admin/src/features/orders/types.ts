@@ -57,7 +57,7 @@ export const ORDER_STATUSES: OrderStatus[] = [
 export const statusLabels: Record<OrderStatus, string> = {
   New: 'Новый',
   Accepted: 'Принят',
-  Baking: 'Выпекается',
+  Baking: 'Готовится',
   OnTheWay: 'В пути',
   Delivered: 'Доставлен',
   Cancelled: 'Отменён',

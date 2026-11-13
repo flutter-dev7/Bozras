@@ -1,17 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import {
-  ClipboardList,
-  Eye,
-  EyeOff,
-  Loader2,
-  Lock,
-  Mail,
-  Wallet,
-  Wheat,
-} from 'lucide-react'
+import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
@@ -19,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ApiError } from '@/lib/api'
 
+import { AuthBrandPanel } from './auth-brand-panel'
 import { useAuth } from './auth-context'
 
 const schema = z.object({
@@ -27,26 +19,6 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
-
-const features = [
-  {
-    icon: ClipboardList,
-    title: 'Все заказы',
-    text: 'Статусы, курьеры и отмены в одном списке',
-  },
-  {
-    icon: Wheat,
-    title: 'План производства',
-    text: 'Сколько хлеба печь на выбранный день',
-  },
-  {
-    icon: Wallet,
-    title: 'Долги и оплаты',
-    text: 'Баланс каждого магазина под контролем',
-  },
-]
-
-const wordmarkStyle = { fontFamily: "'Playfair Display', serif", fontWeight: 900 } as const
 
 const fieldClass =
   'h-12 rounded-xl border-transparent bg-[#FFF3E2] pl-11 text-base focus-visible:bg-white'
@@ -76,60 +48,23 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#3B2A1A] via-[#7A4E16] to-[#C8801A] p-14 text-white lg:flex">
-        <div className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-white/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 -left-20 size-96 rounded-full bg-[#FFD9A0]/20 blur-3xl" />
-        <Wheat className="pointer-events-none absolute -bottom-20 -right-16 size-[28rem] rotate-12 text-white/5" />
-
-        <span className="relative text-5xl" style={wordmarkStyle}>
-          Нон
-        </span>
-
-        <div className="relative">
-          <h2 className="text-4xl font-extrabold leading-tight xl:text-5xl">
-            Свежий хлеб —<br />
-            под полным контролем
-          </h2>
-          <p className="mt-4 max-w-md text-lg text-white/80">
-            Всё, что нужно для работы пекарни, в одной панели.
-          </p>
-
-          <div className="mt-10 space-y-3">
-            {features.map(({ icon: Icon, title, text }) => (
-              <div
-                key={title}
-                className="flex max-w-md items-center gap-4 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur"
-              >
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
-                  <Icon className="size-5" />
-                </div>
-                <div>
-                  <p className="font-bold">{title}</p>
-                  <p className="text-sm text-white/70">{text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <span className="relative text-sm text-white/60">Панель администратора</span>
-      </div>
+      <AuthBrandPanel />
 
       <div className="relative flex items-center justify-center overflow-hidden bg-[#FFF8EE] p-6">
         <div className="pointer-events-none absolute -right-20 -top-20 size-80 rounded-full bg-[#C8801A]/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-16 size-80 rounded-full bg-[#7A4E16]/10 blur-3xl" />
 
         <div className="relative w-full max-w-md">
-          <div className="mb-6 text-center lg:hidden">
-            <span className="text-5xl text-[#3B2A1A]" style={wordmarkStyle}>
-              Нон
-            </span>
+          <div className="mb-6 flex justify-center lg:hidden">
+            <img src="/logo-full.png" alt="Bozras" className="h-16 w-auto" />
           </div>
 
           <div className="rounded-3xl bg-white p-8 shadow-xl shadow-amber-900/10 ring-1 ring-black/5 sm:p-10">
-            <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7A4E16] to-[#C8801A] text-white shadow-lg shadow-amber-900/20">
-              <Wheat className="size-7" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Bozras"
+              className="mb-6 size-14 rounded-2xl shadow-lg shadow-amber-900/20"
+            />
 
             <h1 className="text-3xl font-extrabold text-[#3B2A1A]">Добро пожаловать</h1>
             <p className="mt-2 text-stone-500">Войдите в панель администратора</p>
@@ -184,6 +119,15 @@ export function LoginPage() {
                 )}
               </div>
 
+              <div className="-mt-2 text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm font-semibold text-[#A8650F] hover:underline"
+                >
+                  Забыли пароль?
+                </Link>
+              </div>
+
               {error && (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   {error}
@@ -201,7 +145,7 @@ export function LoginPage() {
             </form>
           </div>
 
-          <p className="mt-6 text-center text-sm text-stone-400">© Нон · Панель администратора</p>
+          <p className="mt-6 text-center text-sm text-stone-400">© Bozras · Панель администратора</p>
         </div>
       </div>
     </div>

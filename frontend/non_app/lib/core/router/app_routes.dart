@@ -15,6 +15,10 @@ class AppRoutes {
   static const String balance = '/balance';
   static const String shopDetails = '/shop-details';
   static const String shopForm = '/shop-form';
+  static const String shopProfile = '/shop-profile';
+  static const String connectSupplier = '/connect-supplier';
+  static const String connectionPending = '/connection-pending';
+  static const String selectSupplier = '/select-supplier';
 
   static String orderDetailsFor(String id) => '/orders/$id';
 

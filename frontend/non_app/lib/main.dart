@@ -23,7 +23,7 @@ class NonApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'Нон',
+      title: 'Bozras',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       routerConfig: router,

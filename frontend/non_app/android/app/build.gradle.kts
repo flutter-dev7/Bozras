@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "tj.non.non_app"
+    namespace = "tj.bozras.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,7 +22,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "tj.non.non_app"
+        applicationId = "tj.bozras.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

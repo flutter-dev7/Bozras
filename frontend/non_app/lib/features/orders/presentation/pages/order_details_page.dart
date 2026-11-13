@@ -11,6 +11,7 @@ import 'package:non_app/features/auth/domain/entities/user_role.dart';
 import 'package:non_app/features/auth/presentation/providers/auth_providers.dart';
 import 'package:non_app/features/orders/domain/entities/order_draft.dart';
 import 'package:non_app/features/orders/domain/entities/order_status.dart';
+import 'package:non_app/features/orders/presentation/widgets/admin_order_actions.dart';
 import 'package:non_app/features/orders/presentation/widgets/courier_action_button.dart';
 import 'package:non_app/features/payments/presentation/widgets/collect_debt_card.dart';
 import 'package:non_app/features/products/presentation/providers/products_providers.dart';
@@ -132,6 +133,7 @@ class OrderDetailsPage extends ConsumerWidget {
     final isShop = role == UserRole.shop;
     final isCourier = role == UserRole.courier;
     final isAgent = role == UserRole.agent;
+    final isAdmin = role == UserRole.admin;
 
     return Scaffold(
       appBar: AppTopBar(
@@ -173,6 +175,10 @@ class OrderDetailsPage extends ConsumerWidget {
             if (isCourier) ...[
               const SizedBox(height: 16),
               CollectDebtCard(shopId: data.shopId, shopName: data.shopName),
+            ],
+            if (isAdmin) ...[
+              const SizedBox(height: 20),
+              AdminOrderActions(order: data),
             ],
             if ((isShop || (isAgent && data.source == 'Agent')) &&
                 (data.canEdit || data.canCancel)) ...[

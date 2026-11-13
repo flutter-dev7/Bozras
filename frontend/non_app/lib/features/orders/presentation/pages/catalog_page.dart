@@ -47,7 +47,8 @@ List<Object> _catalogRows(List<Product> list) {
       return a.compareTo(b);
     });
 
-  final showHeaders = names.length > 1 || names.first != null;
+  final showHeaders =
+      names.length > 1 || (names.isNotEmpty && names.first != null);
 
   return [
     for (final name in names) ...[
@@ -78,7 +79,7 @@ class _CatalogView extends ConsumerWidget {
           onRetry: () => ref.invalidate(productsProvider),
         ),
         data: (list) {
-          final rows = _catalogRows(list);
+          final rows = list.isEmpty ? const <Object>[] : _catalogRows(list);
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -251,37 +252,7 @@ class _ProductTile extends ConsumerWidget {
                 ),
                 const Spacer(),
                 if (quantity == 0)
-                  product.inStock
-                      ? Material(
-                          color: AppDecor.heroMid,
-                          borderRadius: BorderRadius.circular(14),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: () => change(1),
-                            child: const SizedBox(
-                              width: 112,
-                              height: 36,
-                              child: Icon(
-                                AppIcons.plus,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        )
-                      : Container(
-                          width: 112,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: AppColors.border,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(
-                            AppIcons.plus,
-                            size: 18,
-                            color: AppColors.muted,
-                          ),
-                        )
+                  _AddButton(enabled: product.inStock, onTap: () => change(1))
                 else
                   QuantityStepper(value: quantity, onChanged: change),
               ],
@@ -373,6 +344,34 @@ class _CartBar extends StatelessWidget {
                 const Icon(AppIcons.forward, color: Colors.white, size: 20),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AddButton extends StatelessWidget {
+  const _AddButton({required this.enabled, required this.onTap});
+
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: enabled ? AppDecor.heroMid : AppColors.border,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: enabled ? onTap : null,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(
+            AppIcons.plus,
+            size: 22,
+            color: enabled ? Colors.white : AppColors.muted,
           ),
         ),
       ),

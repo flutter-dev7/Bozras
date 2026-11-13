@@ -35,7 +35,7 @@ enum OrderStatus {
   String get label => switch (this) {
         OrderStatus.created => 'Новый',
         OrderStatus.accepted => 'Принят',
-        OrderStatus.baking => 'Выпекается',
+        OrderStatus.baking => 'Готовится',
         OrderStatus.onTheWay => 'В пути',
         OrderStatus.delivered => 'Доставлен',
         OrderStatus.cancelled => 'Отменён',

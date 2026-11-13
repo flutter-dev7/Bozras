@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:non_app/features/orders/presentation/pages/admin_orders_page.dart';
 import 'package:non_app/features/orders/presentation/pages/agent_orders_page.dart';
 import 'package:non_app/features/orders/presentation/pages/catalog_page.dart';
 import 'package:non_app/features/orders/presentation/pages/courier_history_page.dart';
 import 'package:non_app/features/orders/presentation/pages/courier_map_page.dart';
 import 'package:non_app/features/orders/presentation/pages/courier_today_page.dart';
 import 'package:non_app/features/orders/presentation/pages/orders_page.dart';
+import 'package:non_app/features/product_management/presentation/pages/products_manage_page.dart';
+import 'package:non_app/features/reports/presentation/pages/plan_page.dart';
+import 'package:non_app/features/shop_management/presentation/pages/shops_manage_page.dart';
 import 'package:non_app/features/shops/presentation/pages/agent_shops_page.dart';
 import 'package:non_app/features/visits/presentation/pages/visits_page.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -122,31 +126,25 @@ List<NavTab> tabsFor(UserRole role) {
           label: 'Заказы',
           icon: PhosphorIconsRegular.clipboardText,
           selectedIcon: PhosphorIconsFill.clipboardText,
-          page: _Soon(
-            title: 'Все заказы',
-            icon: PhosphorIconsBold.clipboardText,
-            message: 'Здесь будут все заказы и их статусы',
-          ),
+          page: AdminOrdersPage(),
+        ),
+        NavTab(
+          label: 'Товары',
+          icon: PhosphorIconsRegular.package,
+          selectedIcon: PhosphorIconsFill.package,
+          page: ProductsManagePage(),
         ),
         NavTab(
           label: 'План',
           icon: PhosphorIconsRegular.chartBar,
           selectedIcon: PhosphorIconsFill.chartBar,
-          page: _Soon(
-            title: 'План выпечки',
-            icon: PhosphorIconsBold.chartBar,
-            message: 'Здесь будет, сколько хлеба испечь на день',
-          ),
+          page: PlanPage(),
         ),
         NavTab(
           label: 'Магазины',
           icon: PhosphorIconsRegular.storefront,
           selectedIcon: PhosphorIconsFill.storefront,
-          page: _Soon(
-            title: 'Магазины',
-            icon: PhosphorIconsBold.storefront,
-            message: 'Здесь будут магазины, долги и оплаты',
-          ),
+          page: ShopsManagePage(),
         ),
         _profileTab,
       ];

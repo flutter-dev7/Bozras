@@ -1,3 +1,5 @@
+import 'package:non_app/features/orders/domain/entities/courier.dart';
+
 import '../../../../core/models/paged_result.dart';
 import '../../domain/entities/order.dart';
 import '../../domain/entities/order_draft.dart';
@@ -36,10 +38,12 @@ class OrdersRepositoryImpl implements OrdersRepository {
   Future<Order> getOrder(String id) => _remote.getOrder(id);
 
   @override
-  Future<void> createOrder(String id, OrderDraft draft) => _remote.createOrder(id, draft);
+  Future<void> createOrder(String id, OrderDraft draft) =>
+      _remote.createOrder(id, draft);
 
   @override
-  Future<void> updateOrder(String id, OrderDraft draft) => _remote.updateOrder(id, draft);
+  Future<void> updateOrder(String id, OrderDraft draft) =>
+      _remote.updateOrder(id, draft);
 
   @override
   Future<void> cancelOrder(String id) => _remote.cancelOrder(id);
@@ -58,4 +62,11 @@ class OrdersRepositoryImpl implements OrdersRepository {
       paymentMethod: paymentMethod,
     );
   }
+
+  @override
+  Future<List<Courier>> getCouriers() => _remote.getCouriers();
+
+  @override
+  Future<void> assignCourier(String orderId, String courierId) =>
+      _remote.assignCourier(orderId, courierId);
 }
