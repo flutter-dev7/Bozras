@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:non_app/core/storage/supplier_storage.dart';
 
 import '../constants/api_constants.dart';
 import '../storage/token_storage.dart';
@@ -13,9 +14,11 @@ enum _RefreshOutcome { success, rejected, failed }
 class ApiClient {
   ApiClient({
     required TokenStorage tokenStorage,
+    required SupplierStorage supplierStorage,
     required SessionEvents sessionEvents,
     String? baseUrl,
   }) : _tokenStorage = tokenStorage,
+       _supplierStorage = supplierStorage,
        _sessionEvents = sessionEvents,
        dio = Dio(_options(baseUrl)),
        _refreshDio = Dio(_options(baseUrl)) {
@@ -27,6 +30,7 @@ class ApiClient {
   final Dio dio;
   final Dio _refreshDio;
   final TokenStorage _tokenStorage;
+  final SupplierStorage _supplierStorage;
   final SessionEvents _sessionEvents;
 
   Future<_RefreshOutcome>? _refreshing;
@@ -119,9 +123,24 @@ class ApiClient {
       if (token != null && token.isNotEmpty) {
         options.headers['Authorization'] = 'Bearer $token';
       }
+
+      final supplierId = _supplierStorage.supplierId;
+
+      if (supplierId != null && !_withoutSupplier(options.path)) {
+        options.headers['X-Supplier-Id'] = supplierId;
+      }
     }
 
     handler.next(options);
+  }
+
+  static bool _withoutSupplier(String path) {
+    final p = path.toLowerCase();
+
+    return p.startsWith('/api/connections') ||
+        p.startsWith('/api/auth') ||
+        p.startsWith('/api/devices') ||
+        p.startsWith('/api/locations');
   }
 
   Future<void> _onError(

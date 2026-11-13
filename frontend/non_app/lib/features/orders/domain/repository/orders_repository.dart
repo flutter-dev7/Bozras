@@ -1,4 +1,5 @@
 import '../../../../core/models/paged_result.dart';
+import '../entities/courier.dart';
 import '../entities/order.dart';
 import '../entities/order_draft.dart';
 import '../entities/order_status.dart';
@@ -28,4 +29,8 @@ abstract class OrdersRepository {
     double? paymentAmount,
     PaymentMethod? paymentMethod,
   });
+
+  Future<List<Courier>> getCouriers();
+
+  Future<void> assignCourier(String orderId, String courierId);
 }

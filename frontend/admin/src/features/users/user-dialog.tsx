@@ -22,14 +22,24 @@ import {
 } from './api'
 import { AppDialog } from '@/components/app-dialog'
 
-function RoleSelect({ value, onChange }: { value: UserRole; onChange: (role: UserRole) => void }) {
+const STAFF_ROLES = USER_ROLES.filter((role) => role !== 'Shop')
+
+function RoleSelect({
+  value,
+  onChange,
+  roles,
+}: {
+  value: UserRole
+  onChange: (role: UserRole) => void
+  roles: readonly UserRole[]
+}) {
   return (
     <NativeSelect
       className="h-11"
       value={value}
       onChange={(e) => onChange(e.target.value as UserRole)}
     >
-      {USER_ROLES.map((role) => (
+      {roles.map((role) => (
         <option key={role} value={role}>
           {roleLabels[role]}
         </option>
@@ -130,7 +140,7 @@ function CreateForm({ onClose }: { onClose: () => void }) {
 
       <div className="space-y-2">
         <Label>Роль</Label>
-        <RoleSelect value={role} onChange={setRole} />
+        <RoleSelect value={role} onChange={setRole} roles={STAFF_ROLES} />
       </div>
 
       <div className="flex gap-3 rounded-xl bg-sky-50 p-4 text-sm text-sky-800">
@@ -223,7 +233,13 @@ function EditFields({ user, onClose }: { user: UserDetails; onClose: () => void 
 
       <div className="space-y-2">
         <Label>Роль</Label>
-        <RoleSelect value={role} onChange={setRole} />
+        {user.role === 'Shop' ? (
+          <p className="rounded-xl bg-stone-50 px-4 py-3 text-sm font-bold text-stone-800">
+            {roleLabels.Shop}
+          </p>
+        ) : (
+          <RoleSelect value={role} onChange={setRole} roles={STAFF_ROLES} />
+        )}
       </div>
 
       <div className="space-y-2">
@@ -299,7 +315,7 @@ export function UserDialog({
       onClose={onClose}
       icon={isEdit ? UserCog : UserPlus}
       title={isEdit ? 'Редактирование пользователя' : 'Новый пользователь'}
-      subtitle={isEdit ? 'Данные, роль и доступ' : 'Курьер, агент, администратор или магазин'}
+      subtitle={isEdit ? 'Данные, роль и доступ' : 'Курьер, агент или администратор'}
     >
       {target?.mode === 'create' && <CreateForm onClose={onClose} />}
       {target?.mode === 'edit' && <EditForm key={target.id} id={target.id} onClose={onClose} />}

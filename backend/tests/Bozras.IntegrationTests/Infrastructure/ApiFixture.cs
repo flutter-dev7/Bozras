@@ -39,6 +39,7 @@ public class ApiFixture : IAsyncLifetime
     private NonApiFactory? _factory;
 
     public const string TestPassword = "Test12345";
+    public Guid SupplierId { get; private set; }
 
     private string? _testPasswordHash;
 
@@ -116,6 +117,20 @@ public class ApiFixture : IAsyncLifetime
         {
             await db.Database.EnsureDeletedAsync();
             await db.Database.MigrateAsync();
+
+            var supplier = new Supplier
+            {
+                Name = "Тестовая пекарня",
+                Code = SupplierCodeGenerator.Generate(),
+                IsActive = true,
+                SubscriptionStatus = SubscriptionStatus.Active,
+                SubscriptionEndsAt = DateTime.UtcNow.AddYears(10)
+            };
+
+            db.Suppliers.Add(supplier);
+            await db.SaveChangesAsync();
+
+            SupplierId = supplier.Id;
         }
 
         _factory = new NonApiFactory(Email, Push);
@@ -177,6 +192,7 @@ public class ApiFixture : IAsyncLifetime
     {
         var client = CreateAnonymousClient();
         client.SetToken(token);
+        client.SetHeader("X-Supplier-Id", SupplierId.ToString());
 
         return client;
     }
@@ -200,7 +216,8 @@ public class ApiFixture : IAsyncLifetime
             EmailConfirmed = true,
             PasswordHash = _testPasswordHash,
             Role = role,
-            IsActive = true
+            IsActive = true,
+            SupplierId = role is UserRole.Admin or UserRole.Agent or UserRole.Courier ? SupplierId : null
         };
 
         db.Users.Add(user);
@@ -210,6 +227,8 @@ public class ApiFixture : IAsyncLifetime
 
         var http = _factory!.CreateClient();
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token.Value);
+        if (role == UserRole.Shop)
+            http.DefaultRequestHeaders.Add("X-Supplier-Id", SupplierId.ToString());
 
         return new ApiClient(http, user.Id, phone);
     }

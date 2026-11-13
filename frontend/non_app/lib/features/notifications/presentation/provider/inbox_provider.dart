@@ -27,7 +27,8 @@ class InboxNotifier extends Notifier<List<AppNotification>> {
 
     if (title.isEmpty && body.isEmpty) return;
 
-    final id = message.messageId ?? DateTime.now().microsecondsSinceEpoch.toString();
+    final id =
+        message.messageId ?? DateTime.now().microsecondsSinceEpoch.toString();
 
     if (state.any((n) => n.id == id)) return;
 
@@ -36,6 +37,7 @@ class InboxNotifier extends Notifier<List<AppNotification>> {
       title: title,
       body: body,
       orderId: PushService.orderIdOf(message),
+      supplierId: PushService.supplierIdOf(message),
       receivedAt: DateTime.now(),
       read: read,
     );

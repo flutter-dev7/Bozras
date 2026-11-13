@@ -1,4 +1,5 @@
 using Bozras.Application.Common;
+using Bozras.Application.DTOs.Connections.Response;
 using Bozras.Application.DTOs.Shops.Request;
 using Bozras.Application.DTOs.Shops.Response;
 
@@ -25,4 +26,7 @@ public interface IShopService
     Task<Result<ShopResponse>> SetLocationAsync(Guid id, SetLocationRequest request, CancellationToken ct = default);
 
     Task<Result<ShopResponse>> SetMyLocationAsync(Guid userId, SetLocationRequest request, CancellationToken ct = default);
+    Task<Result<List<ShopRequestResponse>>> GetRequestsAsync(CancellationToken ct = default);
+    Task<Result> ApproveAsync(Guid id, CancellationToken ct = default);
+    Task<Result> RejectAsync(Guid id, CancellationToken ct = default);
 }

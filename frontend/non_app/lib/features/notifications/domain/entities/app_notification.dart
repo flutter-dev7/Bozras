@@ -4,6 +4,7 @@ class AppNotification {
     required this.title,
     required this.body,
     required this.orderId,
+    required this.supplierId,
     required this.receivedAt,
     required this.read,
   });
@@ -12,6 +13,7 @@ class AppNotification {
   final String title;
   final String body;
   final String? orderId;
+  final String? supplierId;
   final DateTime receivedAt;
   final bool read;
 
@@ -20,6 +22,7 @@ class AppNotification {
         title: title,
         body: body,
         orderId: orderId,
+        supplierId: supplierId,
         receivedAt: receivedAt,
         read: true,
       );

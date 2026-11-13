@@ -87,6 +87,12 @@ public class ApiClient
 
         return request;
     }
+    
+    public void SetHeader(string name, string value)
+    {
+        _http.DefaultRequestHeaders.Remove(name);
+        _http.DefaultRequestHeaders.Add(name, value);
+    }
 
     private async Task<ApiResponse<T>> SendAsync<T>(HttpRequestMessage request)
     {

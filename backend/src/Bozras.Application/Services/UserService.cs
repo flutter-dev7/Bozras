@@ -70,8 +70,10 @@ public class UserService : IUserService
         if (_tenant.SupplierId is null)
             return Result<UserDetailsResponse>.Failure("Не выбран поставщик.", ErrorType.Forbidden);
 
-        if (request.Role == UserRole.SuperAdmin)
-            return Result<UserDetailsResponse>.Failure("Эту роль назначить нельзя.", ErrorType.Forbidden);
+        if (request.Role is UserRole.SuperAdmin or UserRole.Shop)
+            return Result<UserDetailsResponse>.Failure(
+                "Эту роль назначить нельзя. Магазины регистрируются сами и подключаются по коду.",
+                ErrorType.Forbidden);
 
         if (await _userRepository.GetByPhoneAsync(phone, ct) is not null)
             return Result<UserDetailsResponse>.Failure("Пользователь с таким номером уже существует.", ErrorType.Conflict);
@@ -85,7 +87,7 @@ public class UserService : IUserService
             EmailConfirmed = false,
             Role = request.Role,
             IsActive = true,
-            SupplierId = request.Role == UserRole.Shop ? null : _tenant.SupplierId,
+            SupplierId = _tenant.SupplierId,
         };
 
         await _userRepository.AddAsync(user, ct);

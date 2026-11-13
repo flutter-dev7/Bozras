@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:non_app/features/notifications/presentation/provider/inbox_provider.dart';
 import 'package:non_app/features/notifications/presentation/provider/notifications_providers.dart';
+import 'package:non_app/features/notifications/presentation/utils/open_order.dart';
 
-import '../../../../core/router/app_routes.dart';
 import '../../../orders/presentation/providers/courier_providers.dart';
 import '../../../orders/presentation/providers/orders_providers.dart';
 import '../../../shops/presentation/providers/shops_providers.dart';
@@ -43,10 +43,15 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
     }
   }
 
-  void _openOrder(String orderId) {
+  void _openOrder(String orderId, String? supplierId) {
     if (!mounted) return;
 
-    context.push(AppRoutes.orderDetailsFor(orderId));
+    openOrder(
+      ProviderScope.containerOf(context),
+      GoRouter.of(context),
+      orderId,
+      supplierId: supplierId,
+    );
   }
 
   void _onForeground(RemoteMessage message) {
@@ -86,7 +91,8 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
               ? null
               : SnackBarAction(
                   label: 'Открыть',
-                  onPressed: () => _openOrder(orderId),
+                  onPressed: () =>
+                      _openOrder(orderId, PushService.supplierIdOf(message)),
                 ),
         ),
       );

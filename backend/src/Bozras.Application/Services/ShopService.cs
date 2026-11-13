@@ -1,4 +1,5 @@
 using Bozras.Application.Common;
+using Bozras.Application.DTOs.Connections.Response;
 using Bozras.Application.DTOs.Shops.Request;
 using Bozras.Application.DTOs.Shops.Response;
 using Bozras.Application.Interfaces.Repositories;
@@ -150,6 +151,47 @@ public class ShopService : IShopService
         await _unitOfWork.SaveChangesAsync(ct);
 
         return await ReloadAsync(shop.Id, ct);
+    }
+    
+    public async Task<Result<List<ShopRequestResponse>>> GetRequestsAsync(CancellationToken ct = default)
+    {
+        var shops = await _shopRepository.GetByStatusAsync(ShopConnectionStatus.Pending, ct);
+
+        var items = shops.Select(s => new ShopRequestResponse
+        {
+            Id = s.Id,
+            Name = s.Name,
+            Address = s.Address,
+            Phone = s.Phone,
+            ContactName = s.ContactName,
+            Latitude = s.Latitude,
+            Longitude = s.Longitude,
+            OwnerName = s.User?.FullName,
+            OwnerPhone = s.User?.Phone
+        }).ToList();
+
+        return Result<List<ShopRequestResponse>>.Success(items);
+    }
+
+    public Task<Result> ApproveAsync(Guid id, CancellationToken ct = default) =>
+        ResolveRequestAsync(id, ShopConnectionStatus.Active, ct);
+
+    public Task<Result> RejectAsync(Guid id, CancellationToken ct = default) =>
+        ResolveRequestAsync(id, ShopConnectionStatus.Rejected, ct);
+
+    private async Task<Result> ResolveRequestAsync(Guid id, ShopConnectionStatus target, CancellationToken ct)
+    {
+        var shop = await _shopRepository.GetByIdAsync(id, ct);
+        if (shop is null)
+            return Result.Failure("Заявка не найдена.", ErrorType.NotFound);
+
+        if (shop.Status != ShopConnectionStatus.Pending)
+            return Result.Failure("Заявка уже обработана.", ErrorType.Conflict);
+
+        shop.Status = target;
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return Result.Success();
     }
 
     private async Task<Result<ShopResponse>> CreateInternalAsync(

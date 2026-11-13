@@ -1,6 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:non_app/features/connections/presentation/pages/connect_supplier_page.dart';
+import 'package:non_app/features/connections/presentation/pages/connection_pending_page.dart';
+import 'package:non_app/features/connections/presentation/pages/select_supplier_page.dart';
+import 'package:non_app/features/connections/presentation/pages/shop_profile_page.dart';
 import 'package:non_app/features/notifications/presentation/widgets/push_bootstrap.dart';
 import 'package:non_app/features/orders/domain/entities/order.dart';
 import 'package:non_app/features/orders/presentation/pages/order_details_page.dart';
@@ -132,6 +136,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.shopForm,
         builder: (context, state) => const AddShopPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.shopProfile,
+        builder: (context, state) => const ShopProfilePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.connectSupplier,
+        builder: (context, state) => const ConnectSupplierPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.connectionPending,
+        builder: (context, state) => const ConnectionPendingPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.selectSupplier,
+        builder: (context, state) => const SelectSupplierPage(),
       ),
     ],
   );

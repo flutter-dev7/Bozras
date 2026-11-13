@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:non_app/core/widgets/app_dialogs.dart';
+import 'package:non_app/features/auth/domain/entities/user_role.dart';
 import 'package:non_app/features/sessions/presentation/pages/sessions_page.dart';
 
 import '../../../../core/constants/app_icons.dart';
@@ -62,24 +63,26 @@ class ProfilePage extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
           _HeaderCard(user: user),
-          const SizedBox(height: 16),
-          Card(
-            child: Column(
-              children: [
-                _InfoTile(
-                  icon: AppIcons.phone,
-                  label: 'Телефон',
-                  value: user.phone,
-                ),
-                const Divider(indent: 64),
-                _InfoTile(
-                  icon: AppIcons.email,
-                  label: 'Email',
-                  value: user.email ?? '—',
-                ),
-              ],
+          if (user.role == UserRole.shop) ...[
+            const SizedBox(height: 16),
+            Card(
+              child: Column(
+                children: [
+                  _ActionTile(
+                    icon: AppIcons.store,
+                    label: 'Профиль магазина',
+                    onTap: () => context.push(AppRoutes.shopProfile),
+                  ),
+                  const Divider(indent: 64),
+                  _ActionTile(
+                    icon: AppIcons.truck,
+                    label: 'Мои поставщики',
+                    onTap: () => context.push(AppRoutes.selectSupplier),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 16),
           Card(
             child: Column(

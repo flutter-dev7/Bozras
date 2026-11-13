@@ -116,6 +116,7 @@ public class OrderNotifier : IOrderNotifier
     {
         ["type"] = type,
         ["orderId"] = order.Id.ToString(),
+        ["supplierId"] = order.SupplierId.ToString(),
         ["shopId"] = order.ShopId.ToString(),
         ["status"] = order.Status.ToString()
     };

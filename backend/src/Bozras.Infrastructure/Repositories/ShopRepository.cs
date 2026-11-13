@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Bozras.Application.Interfaces.Repositories;
 using Bozras.Domain.Entities;
+using Bozras.Domain.Enums;
 using Bozras.Infrastructure.Persistence.Data;
 
 namespace Bozras.Infrastructure.Repositories;
@@ -40,6 +41,7 @@ public class ShopRepository : IShopRepository
         string? search, bool? isActive, int page, int pageSize, CancellationToken ct = default)
     {
         var query = _context.Shops.AsNoTracking().Include(s => s.User).AsQueryable();
+        query = query.Where(s => s.Status == ShopConnectionStatus.Active);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -73,6 +75,14 @@ public class ShopRepository : IShopRepository
     public Task LockForUpdateAsync(Guid shopId, CancellationToken ct = default) =>
         _context.Database.ExecuteSqlInterpolatedAsync(
             $"SELECT \"Id\" FROM \"Shops\" WHERE \"Id\" = {shopId} FOR UPDATE", ct);
+    
+    public Task<List<Shop>> GetByStatusAsync(ShopConnectionStatus status, CancellationToken ct = default) =>
+        _context.Shops
+            .AsNoTracking()
+            .Include(s => s.User)
+            .Where(s => s.Status == status)
+            .OrderBy(s => s.Name)
+            .ToListAsync(ct);
 
     public async Task AddAsync(Shop shop, CancellationToken ct = default)
     {

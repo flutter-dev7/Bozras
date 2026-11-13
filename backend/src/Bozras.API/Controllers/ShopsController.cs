@@ -113,4 +113,19 @@ public class ShopsController : ApiControllerBase
     {
         return ToActionResult(await _shopService.SetMyLocationAsync(CurrentUserId, request, ct));
     }
+    
+    [HttpGet("requests")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> GetRequests(CancellationToken ct) =>
+        ToActionResult(await _shopService.GetRequestsAsync(ct));
+
+    [HttpPost("{id:guid}/approve")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> Approve(Guid id, CancellationToken ct) =>
+        ToActionResult(await _shopService.ApproveAsync(id, ct));
+
+    [HttpPost("{id:guid}/reject")]
+    [Authorize(Roles = RoleNames.Admin)]
+    public async Task<IActionResult> Reject(Guid id, CancellationToken ct) =>
+        ToActionResult(await _shopService.RejectAsync(id, ct));
 }

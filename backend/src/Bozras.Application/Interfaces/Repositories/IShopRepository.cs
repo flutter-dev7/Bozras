@@ -1,4 +1,5 @@
 using Bozras.Domain.Entities;
+using Bozras.Domain.Enums;
 
 namespace Bozras.Application.Interfaces.Repositories;
 
@@ -22,4 +23,5 @@ public interface IShopRepository
     Task AddAsync(Shop shop, CancellationToken ct = default);
 
     Task LockForUpdateAsync(Guid shopId, CancellationToken ct = default);
+    Task<List<Shop>> GetByStatusAsync(ShopConnectionStatus status, CancellationToken ct = default);
 }

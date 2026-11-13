@@ -10,6 +10,7 @@ import {
   Settings,
   Store,
   Undo2,
+  UserPlus,
   Users,
   Wheat,
   type LucideIcon,
@@ -17,12 +18,15 @@ import {
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
+
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useAuth } from '@/features/auth/auth-context'
 import { useNewOrdersCount } from '@/features/orders/hooks'
 import { supplierMode } from '@/lib/tokens'
 import { cn } from '@/lib/utils'
+import { useShopRequests } from '@/features/supplier/hooks'
+import { SubscriptionBanner } from './subscription-banner'
 
 type NavItem = { to: string; label: string; icon: LucideIcon }
 
@@ -30,8 +34,10 @@ const adminNav: NavItem[] = [
   { to: '/orders', label: 'Заказы', icon: ClipboardList },
   { to: '/plan', label: 'План', icon: Wheat },
   { to: '/shops', label: 'Магазины и долги', icon: Store },
+  { to: '/requests', label: 'Заявки', icon: UserPlus },
   { to: '/products', label: 'Товары', icon: Package },
   { to: '/users', label: 'Пользователи', icon: Users },
+  { to: '/profile', label: 'Профиль', icon: Building2 },
   { to: '/settings', label: 'Настройки', icon: Settings },
 ]
 
@@ -153,13 +159,14 @@ function SidebarShell({ items, subtitle, badges, onNavigate }: ShellProps) {
 
 function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { data: newCount } = useNewOrdersCount()
+  const { data: requests } = useShopRequests()
   const acting = supplierMode.get()
 
   return (
     <SidebarShell
       items={adminNav}
       subtitle={acting ? acting.name : 'Панель администратора'}
-      badges={{ '/orders': newCount }}
+      badges={{ '/orders': newCount, '/requests': requests?.length }}
       onNavigate={onNavigate}
     />
   )
@@ -258,6 +265,7 @@ export function AppLayout() {
         </header>
 
         <ActingBanner />
+        <SubscriptionBanner />
 
         <main className="flex-1 p-4 md:p-8 print:p-0">
           <Outlet />

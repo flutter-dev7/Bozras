@@ -99,6 +99,10 @@ public static class DependencyInjection
         services.AddScoped<IPlanService, PlanService>();
         services.AddScoped<ILocationService, LocationService>();
         
+        services.AddScoped<IConnectionRepository, ConnectionRepository>();
+        services.AddScoped<IShopConnectionService, ShopConnectionService>();
+        services.AddScoped<ISupplierProfileService, SupplierProfileService>();
+        
         return services;
     }
 }

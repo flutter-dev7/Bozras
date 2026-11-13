@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:non_app/features/connections/presentation/providers/connections_providers.dart';
 
 import '../../../../core/providers/core_providers.dart';
 import '../../data/datasources/products_remote_data_source.dart';
@@ -15,5 +16,7 @@ final getProductsUseCaseProvider =
     Provider((ref) => GetProductsUseCase(ref.watch(productsRepositoryProvider)));
 
 final productsProvider = FutureProvider.autoDispose<List<Product>>((ref) {
+  ref.watch(currentSupplierIdProvider);
+
   return ref.watch(getProductsUseCaseProvider)();
 });

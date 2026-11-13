@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:non_app/core/widgets/lazy_indexed_stack.dart';
+import 'package:non_app/features/auth/domain/entities/user_role.dart';
 import 'package:non_app/features/home/presentation/models/nav_tab.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../connections/presentation/widgets/shop_gate.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -25,7 +27,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final tabs = tabsFor(user.role);
     final index = _index.clamp(0, tabs.length - 1);
 
-    return PopScope(
+        final content = PopScope(
       canPop: index == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) setState(() => _index = 0);
@@ -57,5 +59,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ),
     );
+
+    return user.role == UserRole.shop ? ShopGate(child: content) : content;
   }
 }
