@@ -16,6 +16,8 @@ using Bozras.Infrastructure;
 using Bozras.Infrastructure.Persistence.Data;
 using Bozras.Infrastructure.Persistence.Seeds;
 using Bozras.Infrastructure.Services;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
@@ -147,11 +149,30 @@ var uploadsPath = builder.Configuration["Storage:UploadsPath"]
 
 Directory.CreateDirectory(uploadsPath);
 
-builder.Services.AddSingleton<IImageStorage>(new LocalImageStorage(uploadsPath));
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Supabase:Url"]))
+    builder.Services.AddHttpClient<IImageStorage, SupabaseImageStorage>();
+else
+    builder.Services.AddSingleton<IImageStorage>(new LocalImageStorage(uploadsPath));
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 var app = builder.Build();
 
+if (app.Configuration.GetValue("Database:AutoMigrate", false))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+}
+
 await DbSeeder.SeedAsync(app.Services);
+
+app.UseForwardedHeaders();
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -165,7 +186,8 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsProduction())
+    app.UseHttpsRedirection();
 
 app.UseRateLimiter();
 app.UseCors("Admin");

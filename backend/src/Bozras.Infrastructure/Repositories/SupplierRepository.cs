@@ -65,7 +65,7 @@ public class SupplierRepository : ISupplierRepository
 
         var shops = await _context.Shops
             .IgnoreQueryFilters()
-            .Where(s => ids.Contains(s.SupplierId))
+            .Where(s => ids.Contains(s.SupplierId) && s.Status == ShopConnectionStatus.Active)
             .GroupBy(s => s.SupplierId)
             .Select(g => new { SupplierId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.SupplierId, x => x.Count, ct);
