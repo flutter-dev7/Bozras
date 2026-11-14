@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:non_app/features/auth/domain/entities/user_role.dart';
+import 'package:non_app/features/auth/presentation/providers/auth_providers.dart';
 import 'package:non_app/features/shops/domain/entities/shop.dart';
 import 'package:uuid/uuid.dart';
 
@@ -184,7 +186,8 @@ class _OrderFormPageState extends ConsumerState<OrderFormPage>
 
   @override
   Widget build(BuildContext context) {
-    final cutoff = ref.watch(orderCutoffProvider).valueOrNull;
+    final isAdmin = ref.watch(authProvider).valueOrNull?.role == UserRole.admin;
+    final cutoff = isAdmin ? null : ref.watch(orderCutoffProvider).valueOrNull;
     final minDate = DeliveryRules.minDate(cutoff);
     final date = _picked ?? minDate;
 
@@ -454,7 +457,9 @@ class _ProductPicker extends ConsumerWidget {
                   AppIcons.plus,
                   color: available ? AppDecor.heroMid : AppColors.muted,
                 ),
-                onTap: available ? () => Navigator.of(context).pop(product) : null,
+                onTap: available
+                    ? () => Navigator.of(context).pop(product)
+                    : null,
               );
             },
           ),

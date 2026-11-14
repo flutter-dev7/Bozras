@@ -13,15 +13,21 @@ public class ShopConnectionService : IShopConnectionService
     private readonly IConnectionRepository _repository;
     private readonly ITenantAccessService _access;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IPlanLimitService _limits;
+    private readonly IShopRequestNotifier _requestNotifier;
 
     public ShopConnectionService(
         IConnectionRepository repository,
         ITenantAccessService access,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IPlanLimitService limits,
+        IShopRequestNotifier requestNotifier)
     {
         _repository = repository;
         _access = access;
         _unitOfWork = unitOfWork;
+        _limits = limits;
+        _requestNotifier = requestNotifier;
     }
 
     public async Task<Result<ShopProfileResponse>> GetProfileAsync(Guid userId, CancellationToken ct = default)
@@ -162,6 +168,10 @@ public class ShopConnectionService : IShopConnectionService
 
             return Result<SupplierCardResponse>.Failure(message, ErrorType.Conflict);
         }
+        
+        if (await _limits.CheckShopLimitAsync(supplier.Id, ct) is not null)
+            return Result<SupplierCardResponse>.Failure(
+                "Поставщик сейчас не принимает новые магазины.", ErrorType.Forbidden);
 
         var shop = new Shop
         {
@@ -180,6 +190,9 @@ public class ShopConnectionService : IShopConnectionService
 
         await _repository.AddShopAsync(shop, ct);
         await _unitOfWork.SaveChangesAsync(ct);
+
+        if (shop.Status == ShopConnectionStatus.Pending)
+            await _requestNotifier.NotifyAsync(supplier.Id, shop.Name, ct);
 
         return Result<SupplierCardResponse>.Success(ToCard(supplier, shop.Status));
     }

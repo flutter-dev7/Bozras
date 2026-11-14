@@ -1,6 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:non_app/core/network/api_exception.dart';
+import 'package:non_app/core/utils/app_snackbar.dart';
+import 'package:non_app/core/utils/image_url.dart';
 
 import '../../../../core/theme/app_decor.dart';
 import '../../../../core/utils/submit_state_mixin.dart';
@@ -32,6 +38,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   late String _unit;
   late bool _isActive;
   String? _categoryId;
+  String? _imageUrl;
+  String? _localPath;
+  bool _uploading = false;
 
   bool get _isEdit => widget.product != null;
 
@@ -49,6 +58,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     _unit = p?.unit ?? 'шт';
     _isActive = p?.isActive ?? true;
     _categoryId = p?.categoryId;
+    _imageUrl = p?.imageUrl;
   }
 
   @override
@@ -57,6 +67,48 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     _price.dispose();
     _weight.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1600,
+      imageQuality: 85,
+    );
+
+    if (picked == null || !mounted) return;
+
+    if (await picked.length() > 5 * 1024 * 1024) {
+      if (mounted) AppSnackBar.show(context, 'Не более 5 МБ', isError: true);
+      return;
+    }
+
+    setState(() {
+      _localPath = picked.path;
+      _uploading = true;
+    });
+
+    try {
+      final url = await ref.read(uploadProductImageUseCaseProvider)(
+        picked.path,
+      );
+
+      if (mounted) setState(() => _imageUrl = url);
+    } on ApiException catch (e) {
+      if (mounted) {
+        setState(() => _localPath = null);
+        AppSnackBar.show(context, e.message, isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _imageUrl = null;
+      _localPath = null;
+    });
   }
 
   Future<void> _save() {
@@ -68,7 +120,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
         price: double.parse(_price.text.trim().replaceAll(',', '.')),
         unit: _unit,
         weightInGrams: weightText.isEmpty ? null : int.parse(weightText),
-        imageUrl: widget.product?.imageUrl,
+        imageUrl: _imageUrl,
         categoryId: _categoryId,
       );
 
@@ -90,19 +142,31 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
 
   @override
   Widget build(BuildContext context) {
-    final categories = ref.watch(manageCategoriesProvider).valueOrNull ?? const [];
+    final categories =
+        ref.watch(manageCategoriesProvider).valueOrNull ?? const [];
     final unitOptions = _units.contains(_unit) ? _units : [..._units, _unit];
     final categoryValue = categories.any((c) => c.id == _categoryId)
         ? _categoryId
         : null;
 
     return Scaffold(
-      appBar: AppTopBar(title: _isEdit ? 'Редактирование товара' : 'Новый товар'),
+      appBar: AppTopBar(
+        title: _isEdit ? 'Редактирование товара' : 'Новый товар',
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
+            _PhotoPicker(
+              localPath: _localPath,
+              imageUrl: _imageUrl,
+              uploading: _uploading,
+              enabled: !loading,
+              onPick: _pickImage,
+              onRemove: _removeImage,
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _name,
               enabled: !loading,
@@ -117,11 +181,16 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
               value: categoryValue,
               decoration: const InputDecoration(labelText: 'Категория'),
               items: [
-                const DropdownMenuItem(value: null, child: Text('Без категории')),
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Без категории'),
+                ),
                 for (final c in categories)
                   DropdownMenuItem(value: c.id, child: Text(c.name)),
               ],
-              onChanged: loading ? null : (v) => setState(() => _categoryId = v),
+              onChanged: loading
+                  ? null
+                  : (v) => setState(() => _categoryId = v),
             ),
             const SizedBox(height: 16),
             Row(
@@ -143,9 +212,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                         (v ?? '').trim().replaceAll(',', '.'),
                       );
 
-                      return value == null || value < 0
-                          ? 'Введите цену'
-                          : null;
+                      return value == null || value < 0 ? 'Введите цену' : null;
                     },
                   ),
                 ),
@@ -200,7 +267,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                   _isActive ? 'Виден магазинам' : 'Скрыт от магазинов',
                 ),
                 value: _isActive,
-                onChanged: loading ? null : (v) => setState(() => _isActive = v),
+                onChanged: loading
+                    ? null
+                    : (v) => setState(() => _isActive = v),
               ),
               Text(
                 'Остаток на складе: ${widget.product!.stockQuantity} ${widget.product!.unit}. '
@@ -215,11 +284,96 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
             const SizedBox(height: 24),
             PrimaryButton(
               label: _isEdit ? 'Сохранить' : 'Добавить товар',
-              onPressed: _save,
+              onPressed: _uploading ? null : _save,
               isLoading: loading,
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PhotoPicker extends StatelessWidget {
+  const _PhotoPicker({
+    required this.localPath,
+    required this.imageUrl,
+    required this.uploading,
+    required this.enabled,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final String? localPath;
+  final String? imageUrl;
+  final bool uploading;
+  final bool enabled;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = imageUrl == null ? null : resolveImageUrl(imageUrl!);
+    final hasImage = localPath != null || resolved != null;
+
+    Widget content;
+
+    if (localPath != null) {
+      content = Image.file(File(localPath!), fit: BoxFit.cover);
+    } else if (resolved != null) {
+      content = Image.network(
+        resolved,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_outlined),
+      );
+    } else {
+      content = const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.add_a_photo_outlined, color: AppDecor.heroMid, size: 30),
+          SizedBox(height: 6),
+          Text('Добавить фото', style: TextStyle(fontWeight: FontWeight.w700)),
+        ],
+      );
+    }
+
+    return Center(
+      child: Column(
+        children: [
+          InkWell(
+            onTap: enabled && !uploading ? onPick : null,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              width: 140,
+              height: 140,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: AppDecor.fieldFill,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Center(child: content),
+                  if (localPath != null || resolved != null)
+                    SizedBox.expand(child: content),
+                  if (uploading)
+                    Container(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      child: const Center(
+                        child: CircularProgressIndicator(strokeWidth: 3),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          if (hasImage && !uploading)
+            TextButton(
+              onPressed: enabled ? onRemove : null,
+              child: const Text('Удалить фото'),
+            ),
+        ],
       ),
     );
   }

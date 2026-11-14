@@ -13,11 +13,30 @@ import '../../domain/entities/connection_status.dart';
 import '../providers/connections_providers.dart';
 import '../widgets/my_supplier_tile.dart';
 
-class SelectSupplierPage extends ConsumerWidget {
+class SelectSupplierPage extends ConsumerStatefulWidget {
   const SelectSupplierPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SelectSupplierPage> createState() => _SelectSupplierPageState();
+}
+
+class _SelectSupplierPageState extends ConsumerState<SelectSupplierPage> {
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.invalidate(mySuppliersProvider);
+    });
+  }
+
+  Future<void> _refresh() async {
+    ref.invalidate(mySuppliersProvider);
+    await ref.read(mySuppliersProvider.future);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final suppliers = ref.watch(mySuppliersProvider);
     final current = ref.watch(currentSupplierIdProvider);
 
@@ -38,30 +57,38 @@ class SelectSupplierPage extends ConsumerWidget {
             );
           }
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-            children: [
-              for (final s in items) ...[
-                MySupplierTile(
-                  supplier: s,
-                  selected: s.supplierId == current,
-                  onTap: s.status == ConnectionStatus.active && s.isAvailable
-                      ? () async {
-                          await ref.read(shopGateProvider.notifier).select(s.supplierId);
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+              children: [
+                for (final s in items) ...[
+                  MySupplierTile(
+                    supplier: s,
+                    selected: s.supplierId == current,
+                    onTap: s.status == ConnectionStatus.active && s.isAvailable
+                        ? () async {
+                            await ref
+                                .read(shopGateProvider.notifier)
+                                .select(s.supplierId);
 
-                          if (context.mounted && context.canPop()) context.pop();
-                        }
-                      : null,
+                            if (context.mounted && context.canPop()) {
+                              context.pop();
+                            }
+                          }
+                        : null,
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => context.push(AppRoutes.connectSupplier),
+                  icon: const Icon(AppIcons.plus, size: 20),
+                  label: const Text('Подключить ещё поставщика'),
                 ),
-                const SizedBox(height: 10),
               ],
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () => context.push(AppRoutes.connectSupplier),
-                icon: const Icon(AppIcons.plus, size: 20),
-                label: const Text('Подключить ещё поставщика'),
-              ),
-            ],
+            ),
           );
         },
       ),

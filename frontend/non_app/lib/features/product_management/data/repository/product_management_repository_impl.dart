@@ -33,7 +33,8 @@ class ProductManagementRepositoryImpl implements ProductManagementRepository {
   }
 
   @override
-  Future<void> createProduct(ProductInput input) => _remote.createProduct(input);
+  Future<void> createProduct(ProductInput input) =>
+      _remote.createProduct(input);
 
   @override
   Future<void> updateProduct(String id, ProductInput input, bool isActive) =>
@@ -59,4 +60,7 @@ class ProductManagementRepositoryImpl implements ProductManagementRepository {
   @override
   Future<void> writeOffStock(String productId, int quantity, String comment) =>
       _remote.writeOffStock(productId, quantity, comment);
+
+  @override
+  Future<String> uploadImage(String filePath) => _remote.uploadImage(filePath);
 }

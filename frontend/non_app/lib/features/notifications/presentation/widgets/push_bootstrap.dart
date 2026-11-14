@@ -6,10 +6,15 @@ import 'package:non_app/features/notifications/presentation/provider/inbox_provi
 import 'package:non_app/features/notifications/presentation/provider/notifications_providers.dart';
 import 'package:non_app/features/notifications/presentation/utils/open_order.dart';
 
+import '../../../home/presentation/providers/home_navigation_provider.dart';
 import '../../../orders/presentation/providers/courier_providers.dart';
 import '../../../orders/presentation/providers/orders_providers.dart';
+import '../../../shop_management/presentation/providers/shop_management_providers.dart';
 import '../../../shops/presentation/providers/shops_providers.dart';
+import '../../../supplier/presentation/providers/supplier_providers.dart';
 import '../../data/services/push_service.dart';
+
+const _shopRequestType = 'shop_request';
 
 class PushBootstrap extends ConsumerStatefulWidget {
   const PushBootstrap({super.key, required this.child});
@@ -35,8 +40,11 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
           .start(
             onOpenOrder: _openOrder,
             onForeground: _onForeground,
-            onOpened: (m) =>
-                ref.read(inboxProvider.notifier).add(m, read: true),
+            onOpened: (m) {
+              ref.read(inboxProvider.notifier).add(m, read: true);
+
+              if (m.data['type'] == _shopRequestType) _openShopRequests();
+            },
           );
     } catch (e) {
       debugPrint('Push start failed: $e');
@@ -54,6 +62,12 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
     );
   }
 
+  void _openShopRequests() {
+    if (!mounted) return;
+
+    ref.read(homeTargetProvider.notifier).open(HomeTarget.shopRequests);
+  }
+
   void _onForeground(RemoteMessage message) {
     if (!mounted) return;
 
@@ -61,6 +75,8 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
     ref.invalidate(orderDetailsProvider);
     ref.invalidate(courierTodayProvider);
     ref.invalidate(myBalanceProvider);
+    ref.invalidate(shopRequestsProvider);
+    ref.invalidate(shopsManageProvider);
     ref.read(inboxProvider.notifier).add(message);
 
     final notification = message.notification;
@@ -68,6 +84,15 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
     if (notification == null) return;
 
     final orderId = PushService.orderIdOf(message);
+    final isShopRequest = message.data['type'] == _shopRequestType;
+
+    VoidCallback? open;
+
+    if (orderId != null) {
+      open = () => _openOrder(orderId, PushService.supplierIdOf(message));
+    } else if (isShopRequest) {
+      open = _openShopRequests;
+    }
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -87,13 +112,9 @@ class _PushBootstrapState extends ConsumerState<PushBootstrap> {
               if (notification.body != null) Text(notification.body!),
             ],
           ),
-          action: orderId == null
+          action: open == null
               ? null
-              : SnackBarAction(
-                  label: 'Открыть',
-                  onPressed: () =>
-                      _openOrder(orderId, PushService.supplierIdOf(message)),
-                ),
+              : SnackBarAction(label: 'Открыть', onPressed: open),
         ),
       );
   }

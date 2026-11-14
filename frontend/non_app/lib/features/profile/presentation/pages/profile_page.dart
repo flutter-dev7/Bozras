@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:non_app/core/utils/formatters.dart';
 import 'package:non_app/core/widgets/app_dialogs.dart';
 import 'package:non_app/features/auth/domain/entities/user_role.dart';
 import 'package:non_app/features/sessions/presentation/pages/sessions_page.dart';
+import 'package:non_app/features/settings/presentation/pages/settings_page.dart';
+import 'package:non_app/features/supplier/presentation/pages/supplier_profile_page.dart';
+import 'package:non_app/features/supplier/presentation/providers/supplier_providers.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/network/api_exception.dart';
@@ -57,6 +61,17 @@ class ProfilePage extends ConsumerWidget {
 
     if (user == null) return const SizedBox.shrink();
 
+    final supplier = user.role == UserRole.admin
+        ? ref.watch(supplierProfileProvider).valueOrNull
+        : null;
+    final ends = supplier?.subscriptionEndsAt;
+    final subscription = supplier == null
+        ? null
+        : [
+            if (supplier.planName != null) 'Тариф «${supplier.planName}»',
+            if (ends != null) 'до ${Formatters.date(ends)}',
+          ].join(' · ');
+
     return Scaffold(
       appBar: const AppTopBar(title: 'Профиль', showBack: false),
       body: ListView(
@@ -78,6 +93,35 @@ class ProfilePage extends ConsumerWidget {
                     icon: AppIcons.truck,
                     label: 'Мои поставщики',
                     onTap: () => context.push(AppRoutes.selectSupplier),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (user.role == UserRole.admin) ...[
+            const SizedBox(height: 16),
+            Card(
+              child: Column(
+                children: [
+                  _ActionTile(
+                    icon: AppIcons.key,
+                    label: 'Код подключения и подписка',
+                    subtitle: subscription,
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SupplierProfilePage(),
+                      ),
+                    ),
+                  ),
+                  const Divider(indent: 64),
+                  _ActionTile(
+                    icon: Icons.schedule_rounded,
+                    label: 'Время приёма заказов',
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SettingsPage(),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -245,12 +289,14 @@ class _ActionTile extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.color,
+    this.subtitle,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
   final Color? color;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -263,6 +309,9 @@ class _ActionTile extends StatelessWidget {
         label,
         style: TextStyle(fontWeight: FontWeight.w700, color: tileColor),
       ),
+      subtitle: subtitle == null || subtitle!.isEmpty
+          ? null
+          : Text(subtitle!, style: const TextStyle(color: AppColors.muted)),
       trailing: const Icon(AppIcons.forward, size: 18, color: AppColors.muted),
       onTap: onTap,
     );

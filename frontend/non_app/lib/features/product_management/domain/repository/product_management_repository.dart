@@ -27,4 +27,6 @@ abstract class ProductManagementRepository {
   Future<void> receiveStock(String productId, int quantity, String? comment);
 
   Future<void> writeOffStock(String productId, int quantity, String comment);
+
+    Future<String> uploadImage(String filePath);
 }

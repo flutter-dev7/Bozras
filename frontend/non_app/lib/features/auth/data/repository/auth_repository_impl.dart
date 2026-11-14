@@ -18,6 +18,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }) : _remote = remote,
        _tokens = tokens;
 
+  static const _webOnlyMessage =
+      'Вход для этой роли доступен только в веб-панели.';
+
   final AuthRemoteDataSource _remote;
   final TokenStorage _tokens;
 
@@ -28,6 +31,12 @@ class AuthRepositoryImpl implements AuthRepository {
 
     try {
       final user = await _remote.me();
+
+      if (user.isWebOnly) {
+        await _tokens.clear();
+        return null;
+      }
+
       await _tokens.saveUser(jsonEncode(user.toJson()));
 
       return user;
@@ -57,7 +66,25 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  Future<Never> _rejectWebOnly(AuthResponseModel response) async {
+    try {
+      await _remote.logout(response.refreshToken);
+    } on ApiException {
+      // Сессию на сервере закрыть не вышло, локально её и так не сохраняем.
+    }
+
+    throw const ApiException(
+      _webOnlyMessage,
+      type: ApiErrorType.forbidden,
+      statusCode: 403,
+    );
+  }
+
   Future<AuthUser> _saveSession(AuthResponseModel response) async {
+    if (response.user.isWebOnly) {
+      await _rejectWebOnly(response);
+    }
+
     await _tokens.saveTokens(
       access: response.accessToken,
       refresh: response.refreshToken,

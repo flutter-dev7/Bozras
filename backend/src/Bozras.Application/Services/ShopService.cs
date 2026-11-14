@@ -14,15 +14,21 @@ public class ShopService : IShopService
     private readonly IShopRepository _shopRepository;
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITenantContext _tenant;
+    private readonly IPlanLimitService _limits;
 
     public ShopService(
         IShopRepository shopRepository,
         IUserRepository userRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ITenantContext tenant,
+        IPlanLimitService limits)
     {
         _shopRepository = shopRepository;
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
+        _tenant = tenant;
+        _limits = limits;
     }
 
     public async Task<Result<PagedResult<ShopResponse>>> GetPagedAsync(
@@ -188,6 +194,13 @@ public class ShopService : IShopService
         if (shop.Status != ShopConnectionStatus.Pending)
             return Result.Failure("Заявка уже обработана.", ErrorType.Conflict);
 
+        if (target == ShopConnectionStatus.Active)
+        {
+            var limitError = await CheckShopLimitAsync(ct);
+            if (limitError is not null)
+                return Result.Failure(limitError, ErrorType.Forbidden);
+        }
+
         shop.Status = target;
         await _unitOfWork.SaveChangesAsync(ct);
 
@@ -197,6 +210,10 @@ public class ShopService : IShopService
     private async Task<Result<ShopResponse>> CreateInternalAsync(
         CreateShopRequest request, Guid? ownerId, CancellationToken ct)
     {
+        var limitError = await CheckShopLimitAsync(ct);
+        if (limitError is not null)
+            return Result<ShopResponse>.Failure(limitError, ErrorType.Forbidden);
+
         var phone = PhoneNumberNormalizer.Normalize(request.Phone);
         if (phone is null)
             return Result<ShopResponse>.Failure("Неверный номер телефона.");
@@ -252,6 +269,11 @@ public class ShopService : IShopService
 
     private static string? NormalizeOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    
+    private Task<string?> CheckShopLimitAsync(CancellationToken ct) =>
+        _tenant.SupplierId is { } supplierId
+            ? _limits.CheckShopLimitAsync(supplierId, ct)
+            : Task.FromResult<string?>(null);
     
     private async Task<Result<ShopResponse>> ApplyLocationAsync(
         Shop shop, SetLocationRequest request, CancellationToken ct)

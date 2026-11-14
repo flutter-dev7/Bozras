@@ -24,6 +24,7 @@ public class SettingsController : ApiControllerBase
     }
 
     [HttpPut]
+    [Authorize(Roles = RoleNames.Admin)]
     public async Task<IActionResult> Update([FromBody] UpdateSettingsRequest request, CancellationToken ct)
     {
         return ToActionResult(await _settingService.UpdateAsync(request, ct));
