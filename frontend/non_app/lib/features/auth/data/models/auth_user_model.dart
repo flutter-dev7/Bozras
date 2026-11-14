@@ -10,9 +10,14 @@ class AuthUserModel extends AuthUser {
     required super.phone,
     required super.email,
     required super.role,
+    this.isWebOnly = false,
   });
 
+  final bool isWebOnly;
+
   factory AuthUserModel.fromJson(Map<String, dynamic> json) {
+    final rawRole = (json['role'] as String?)?.toLowerCase();
+
     return AuthUserModel(
       id: json['id'] as String,
       firstName: json['firstName'] as String? ?? '',
@@ -20,7 +25,8 @@ class AuthUserModel extends AuthUser {
       fullName: json['fullName'] as String? ?? '',
       phone: json['phone'] as String? ?? '',
       email: json['email'] as String?,
-      role: UserRole.parse(json['role'] as String?),
+      role: UserRole.parse(rawRole),
+      isWebOnly: rawRole == 'superadmin',
     );
   }
 

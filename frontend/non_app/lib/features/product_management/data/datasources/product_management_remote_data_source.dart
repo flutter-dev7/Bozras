@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../../../core/models/paged_result.dart';
 import '../../../../core/network/api_client.dart';
 import '../../domain/entities/product_input.dart';
@@ -101,5 +103,26 @@ class ProductManagementRemoteDataSource {
       '/api/Stock/write-offs',
       data: {'productId': productId, 'quantity': quantity, 'comment': comment},
     );
+  }
+
+    Future<String> uploadImage(String filePath) async {
+    final lower = filePath.toLowerCase();
+    final mime = lower.endsWith('.png')
+        ? 'image/png'
+        : lower.endsWith('.webp')
+        ? 'image/webp'
+        : 'image/jpeg';
+
+    final form = FormData.fromMap({
+      'file': await MultipartFile.fromFile(
+        filePath,
+        filename: filePath.split(RegExp(r'[/\\]')).last,
+        contentType: DioMediaType.parse(mime),
+      ),
+    });
+
+    final data = await _client.post('/api/Uploads/product-image', data: form);
+
+    return data as String;
   }
 }

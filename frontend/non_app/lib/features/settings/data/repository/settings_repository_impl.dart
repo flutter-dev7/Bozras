@@ -8,4 +8,8 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
   @override
   Future<String> getOrderCutoffTime() => _remote.getOrderCutoffTime();
+
+  @override
+  Future<void> updateOrderCutoffTime(String time) =>
+      _remote.updateOrderCutoffTime(time);
 }

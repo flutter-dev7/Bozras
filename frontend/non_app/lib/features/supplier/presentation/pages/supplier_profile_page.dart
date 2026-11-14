@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:non_app/core/widgets/app_dialogs.dart';
+import 'package:non_app/features/user_management/presentation/pages/users_manage_page.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decor.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/utils/error_text.dart';
-import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/submit_state_mixin.dart';
 import '../../../../core/widgets/app_top_bar.dart';
 import '../../../../core/widgets/error_view.dart';
@@ -204,31 +204,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody>
             onPressed: _regenerating ? null : _regenerate,
             icon: const Icon(Icons.refresh_rounded, size: 20),
             label: const Text('Создать новый код'),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Подписка',
-                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-                  ),
-                  const SizedBox(height: 10),
-                  _InfoRow('Тариф', profile.planName ?? '—'),
-                  _InfoRow('Статус', _statusLabel(profile.subscriptionStatus)),
-                  if (ends != null)
-                    _InfoRow(
-                      'Действует до',
-                      '${Formatters.date(ends)}'
-                      '${daysLeft != null && daysLeft >= 0 ? ' (осталось $daysLeft дн.)' : ''}',
-                    ),
-                ],
-              ),
-            ),
-          ),
+          ),          
           const SizedBox(height: 20),
           const Text(
             'Данные для магазинов',

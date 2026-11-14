@@ -5,6 +5,7 @@ import '../../data/datasources/settings_remote_data_source.dart';
 import '../../data/repository/settings_repository_impl.dart';
 import '../../domain/repository/settings_repository.dart';
 import '../../domain/usecases/get_order_cutoff_usecase.dart';
+import '../../domain/usecases/update_order_cutoff_usecase.dart';
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepositoryImpl(SettingsRemoteDataSource(ref.watch(apiClientProvider)));
@@ -12,6 +13,9 @@ final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
 
 final getOrderCutoffUseCaseProvider =
     Provider((ref) => GetOrderCutoffUseCase(ref.watch(settingsRepositoryProvider)));
+
+final updateOrderCutoffUseCaseProvider =
+    Provider((ref) => UpdateOrderCutoffUseCase(ref.watch(settingsRepositoryProvider)));
 
 final orderCutoffProvider = FutureProvider.autoDispose<String>((ref) {
   return ref.watch(getOrderCutoffUseCaseProvider)();

@@ -103,6 +103,9 @@ public static class DependencyInjection
         services.AddScoped<IShopConnectionService, ShopConnectionService>();
         services.AddScoped<ISupplierProfileService, SupplierProfileService>();
         
+        services.AddScoped<IPlanLimitService, PlanLimitService>();
+        services.AddScoped<IShopRequestNotifier, ShopRequestNotifier>();
+        
         return services;
     }
 }

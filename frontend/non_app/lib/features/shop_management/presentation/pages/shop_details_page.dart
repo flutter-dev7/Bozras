@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:non_app/core/router/app_routes.dart';
 import 'package:non_app/core/utils/launcher.dart';
+import 'package:non_app/features/shops/domain/entities/shop.dart';
 
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/network/api_exception.dart';
@@ -70,6 +73,23 @@ class ShopDetailsPage extends ConsumerWidget {
 
       if (context.mounted) AppSnackBar.show(context, 'Данные сохранены');
     }
+  }
+
+  void _createOrder(BuildContext context, ManagedShop shop) {
+    context.push(
+      AppRoutes.orderForm,
+      extra: Shop(
+        id: shop.id,
+        name: shop.name,
+        address: shop.address,
+        phone: shop.phone,
+        contactName: shop.contactName,
+        debtLimit: shop.debtLimit,
+        isActive: shop.isActive,
+        latitude: shop.latitude,
+        longitude: shop.longitude,
+      ),
+    );
   }
 
   Future<void> _acceptPayment(
@@ -242,6 +262,17 @@ class ShopDetailsPage extends ConsumerWidget {
                         ? 'Принять оплату (долг ${Formatters.money(balance.debt)})'
                         : 'Принять оплату',
                   ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                  ),
+                  onPressed: shop.isActive
+                      ? () => _createOrder(context, shop)
+                      : null,
+                  icon: const Icon(AppIcons.plus, size: 20),
+                  label: const Text('Создать заказ'),
                 ),
                 const SizedBox(height: 12),
                 Row(

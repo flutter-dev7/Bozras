@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:non_app/features/product_management/domain/usecases/upload_product_image_usecase.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/providers/core_providers.dart';
@@ -51,6 +52,9 @@ final receiveStockUseCaseProvider = Provider(
 );
 final writeOffStockUseCaseProvider = Provider(
   (ref) => WriteOffStockUseCase(ref.watch(productManagementRepositoryProvider)),
+);
+final uploadProductImageUseCaseProvider = Provider(
+  (ref) => UploadProductImageUseCase(ref.watch(productManagementRepositoryProvider)),
 );
 
 // Фильтры

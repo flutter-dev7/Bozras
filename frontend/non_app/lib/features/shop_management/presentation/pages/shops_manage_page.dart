@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:non_app/features/user_management/presentation/pages/users_manage_page.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_decor.dart';
 import '../../../../core/widgets/app_top_bar.dart';
-import '../../../supplier/presentation/pages/supplier_profile_page.dart';
+import '../../../home/presentation/providers/home_navigation_provider.dart';
 import '../../../supplier/presentation/providers/supplier_providers.dart';
 import '../../../supplier/presentation/widgets/requests_view.dart';
 import '../widgets/debts_view.dart';
@@ -21,7 +21,30 @@ class _ShopsManagePageState extends ConsumerState<ShopsManagePage> {
   int _tab = 0;
 
   @override
+  void initState() {
+    super.initState();
+
+    final requested = ref.read(shopsSegmentProvider);
+
+    if (requested != null) {
+      _tab = requested;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(shopsSegmentProvider.notifier).clear();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen<int?>(shopsSegmentProvider, (_, next) {
+      if (next == null) return;
+
+      setState(() => _tab = next);
+      ref.read(shopsSegmentProvider.notifier).clear();
+      ref.invalidate(shopRequestsProvider);
+    });
+
     final requestsCount =
         ref.watch(shopRequestsProvider).valueOrNull?.length ?? 0;
 
@@ -31,11 +54,11 @@ class _ShopsManagePageState extends ConsumerState<ShopsManagePage> {
         showBack: false,
         actions: [
           AppIconButton(
-            icon: Icons.vpn_key_outlined,
-            tooltip: 'Код и профиль поставщика',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SupplierProfilePage()),
-            ),
+            icon: Icons.groups_2_outlined,
+            tooltip: 'Сотрудники',
+            onPressed: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const UsersManagePage())),
           ),
         ],
       ),

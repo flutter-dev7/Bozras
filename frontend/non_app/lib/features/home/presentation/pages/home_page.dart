@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:non_app/core/widgets/lazy_indexed_stack.dart';
 import 'package:non_app/features/auth/domain/entities/user_role.dart';
 import 'package:non_app/features/home/presentation/models/nav_tab.dart';
+import 'package:non_app/features/shop_management/presentation/pages/shops_manage_page.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../connections/presentation/widgets/shop_gate.dart';
+import '../providers/home_navigation_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -18,6 +20,26 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   int _index = 0;
 
+  void _consumeTarget(List<NavTab> tabs) {
+    if (!mounted) return;
+
+    final target = ref.read(homeTargetProvider);
+
+    if (target == null) return;
+
+    ref.read(homeTargetProvider.notifier).clear();
+
+    switch (target) {
+      case HomeTarget.shopRequests:
+        final index = tabs.indexWhere((t) => t.page is ShopsManagePage);
+
+        if (index < 0) return;
+
+        ref.read(shopsSegmentProvider.notifier).request(2);
+        setState(() => _index = index);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).valueOrNull;
@@ -27,7 +49,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     final tabs = tabsFor(user.role);
     final index = _index.clamp(0, tabs.length - 1);
 
-        final content = PopScope(
+    if (ref.watch(homeTargetProvider) != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _consumeTarget(tabs));
+    }
+
+    final content = PopScope(
       canPop: index == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) setState(() => _index = 0);

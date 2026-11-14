@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:non_app/features/connections/presentation/providers/connections_providers.dart';
+import 'package:non_app/features/home/presentation/providers/home_navigation_provider.dart';
 import 'package:non_app/features/notifications/presentation/provider/inbox_provider.dart';
 import 'package:non_app/features/notifications/presentation/utils/open_order.dart';
 
@@ -108,22 +109,26 @@ class _InboxSheet extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(16),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(16),
-                      onTap: item.orderId == null
-                          ? null
-                          : () {
-                              final container = ProviderScope.containerOf(
-                                context,
-                              );
-                              final router = GoRouter.of(context);
+                      onTap: () {
+                        if (item.orderId == null) {
+                          final target = ref.read(homeTargetProvider.notifier);
 
-                              Navigator.of(context).pop();
-                              openOrder(
-                                container,
-                                router,
-                                item.orderId!,
-                                supplierId: item.supplierId,
-                              );
-                            },
+                          Navigator.of(context).pop();
+                          target.open(HomeTarget.shopRequests);
+                          return;
+                        }
+
+                        final container = ProviderScope.containerOf(context);
+                        final router = GoRouter.of(context);
+
+                        Navigator.of(context).pop();
+                        openOrder(
+                          container,
+                          router,
+                          item.orderId!,
+                          supplierId: item.supplierId,
+                        );
+                      },
                       child: Padding(
                         padding: const EdgeInsets.all(14),
                         child: Row(

@@ -13,12 +13,18 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenant;
+    private readonly IPlanLimitService _limits;
 
-    public UserService(IUserRepository userRepository, IUnitOfWork unitOfWork, ITenantContext tenant)
+    public UserService(
+        IUserRepository userRepository,
+        IUnitOfWork unitOfWork,
+        ITenantContext tenant,
+        IPlanLimitService limits)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
         _tenant = tenant;
+        _limits = limits;
     }
 
     public async Task<Result<PagedResult<UserDetailsResponse>>> GetPagedAsync(
@@ -70,6 +76,10 @@ public class UserService : IUserService
         if (_tenant.SupplierId is null)
             return Result<UserDetailsResponse>.Failure("Не выбран поставщик.", ErrorType.Forbidden);
 
+        var limitError = await _limits.CheckStaffLimitAsync(_tenant.SupplierId.Value, ct);
+        if (limitError is not null)
+            return Result<UserDetailsResponse>.Failure(limitError, ErrorType.Forbidden);
+
         if (request.Role is UserRole.SuperAdmin or UserRole.Shop)
             return Result<UserDetailsResponse>.Failure(
                 "Эту роль назначить нельзя. Магазины регистрируются сами и подключаются по коду.",
@@ -106,6 +116,11 @@ public class UserService : IUserService
         if (user.Role == UserRole.Shop)
             return Result<UserDetailsResponse>.Failure(
                 "Данные владельца магазина меняет только он сам. Чтобы закрыть доступ, отключите магазин.",
+                ErrorType.Forbidden);
+        
+        if (user.Id == currentUserId && (!request.IsActive || request.Role != user.Role))
+            return Result<UserDetailsResponse>.Failure(
+                "Нельзя заблокировать себя или изменить свою роль.",
                 ErrorType.Forbidden);
 
         if (request.Role is UserRole.SuperAdmin or UserRole.Shop)
